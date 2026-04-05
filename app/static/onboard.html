@@ -1,18 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connect Your Facebook Page - E-commerce CS Agent</title>
+    <title>ZenBot - আপনার ফেসবুক পেজ কানেক্ট করুন</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -20,7 +15,6 @@
             justify-content: center;
             padding: 20px;
         }
-
         .container {
             background: white;
             border-radius: 20px;
@@ -30,209 +24,116 @@
             padding: 50px 40px;
             text-align: center;
         }
-
         .logo {
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 20px;
             margin: 0 auto 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; color: white; font-weight: bold;
         }
-
-        h1 {
-            font-size: 28px;
-            color: #1a202c;
-            margin-bottom: 15px;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            color: #718096;
-            font-size: 16px;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        .features {
-            text-align: left;
-            margin-bottom: 40px;
-        }
-
-        .feature {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .feature-icon {
-            width: 24px;
-            height: 24px;
-            background: #48bb78;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-
-        .feature-text {
-            color: #4a5568;
-            font-size: 15px;
-        }
-
-        .connect-btn {
-            background: #1877f2;
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            font-size: 18px;
-            font-weight: 600;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .connect-btn:hover {
-            background: #166fe5;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(24, 119, 242, 0.3);
-        }
-
-        .fb-icon {
-            margin-right: 10px;
-            font-size: 24px;
-        }
-
         .trial-badge {
             display: inline-block;
-            background: #fef5e7;
-            color: #f39c12;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 30px;
+            background: #fef5e7; color: #f39c12;
+            padding: 8px 16px; border-radius: 20px;
+            font-size: 14px; font-weight: 600; margin-bottom: 20px;
         }
-
-        .loading {
-            display: none;
-            margin-top: 20px;
-            color: #718096;
+        h1 { font-size: 26px; color: #1a202c; margin-bottom: 12px; }
+        .subtitle { color: #718096; font-size: 15px; margin-bottom: 35px; line-height: 1.7; }
+        .features { text-align: left; margin-bottom: 35px; }
+        .feature {
+            display: flex; align-items: center; margin-bottom: 14px;
         }
-
+        .feature-icon {
+            width: 22px; height: 22px; background: #48bb78; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 13px; margin-right: 12px; flex-shrink: 0;
+        }
+        .feature-text { color: #4a5568; font-size: 14px; }
+        .connect-btn {
+            background: #1877f2; color: white; border: none;
+            padding: 16px 40px; font-size: 17px; font-weight: 600;
+            border-radius: 10px; cursor: pointer; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease; text-decoration: none;
+        }
+        .connect-btn:hover {
+            background: #166fe5; transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(24, 119, 242, 0.3);
+        }
+        .fb-icon { margin-right: 10px; font-size: 22px; }
+        .loading { display: none; margin-top: 20px; color: #718096; }
         .spinner {
-            border: 3px solid #f3f4f6;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            border: 3px solid #f3f4f6; border-top: 3px solid #667eea;
+            border-radius: 50%; width: 30px; height: 30px;
+            animation: spin 1s linear infinite; margin: 0 auto 10px;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .security-note {
-            margin-top: 30px;
-            padding-top: 30px;
+            margin-top: 25px; padding-top: 25px;
             border-top: 1px solid #e2e8f0;
-            font-size: 13px;
-            color: #a0aec0;
-            line-height: 1.6;
+            font-size: 12px; color: #a0aec0; line-height: 1.6;
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div class="logo">🤖</div>
-
-        <span class="trial-badge">14 Days Free Trial</span>
-
-        <h1>Connect Your Facebook Page</h1>
+        <div class="logo">Z</div>
+        <span class="trial-badge">১৪ দিন ফ্রি ট্রায়াল</span>
+        <h1>আপনার ফেসবুক পেজ কানেক্ট করুন</h1>
         <p class="subtitle">
-            Set up AI-powered customer service for your e-commerce business in Bangladesh. No coding required.
+            AI কাস্টমার সার্ভিস দিয়ে আপনার ই-কমার্স বিজনেস চালান। কোনো কোডিং লাগবে না।
         </p>
-
         <div class="features">
             <div class="feature">
-                <div class="feature-icon">✓</div>
-                <div class="feature-text">Auto-reply to Messenger inquiries 24/7</div>
+                <div class="feature-icon">&#10003;</div>
+                <div class="feature-text">মেসেঞ্জারে ২৪/৭ অটো রিপ্লাই</div>
             </div>
             <div class="feature">
-                <div class="feature-icon">✓</div>
-                <div class="feature-text">Handle orders, pricing & delivery questions</div>
+                <div class="feature-icon">&#10003;</div>
+                <div class="feature-text">অর্ডার, দাম ও ডেলিভারি সংক্রান্ত প্রশ্নের উত্তর</div>
             </div>
             <div class="feature">
-                <div class="feature-icon">✓</div>
-                <div class="feature-text">Automatic product catalog from your posts</div>
+                <div class="feature-icon">&#10003;</div>
+                <div class="feature-text">পোস্ট থেকে অটোমেটিক প্রোডাক্ট ক্যাটালগ</div>
             </div>
             <div class="feature">
-                <div class="feature-icon">✓</div>
-                <div class="feature-text">Track orders & customer conversations</div>
+                <div class="feature-icon">&#10003;</div>
+                <div class="feature-text">অর্ডার ট্র্যাকিং ও কাস্টমার ম্যানেজমেন্ট</div>
             </div>
         </div>
-
         <button class="connect-btn" id="connectBtn" onclick="connectFacebook()">
             <span class="fb-icon">f</span>
-            Connect My Facebook Page
+            ফেসবুক পেজ কানেক্ট করুন
         </button>
-
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <div>Connecting to Facebook...</div>
+            <div>ফেসবুকে কানেক্ট হচ্ছে...</div>
         </div>
-
         <div class="security-note">
-            🔒 Secure OAuth connection. We'll only access your page messages and posts to power your AI assistant.
+            নিরাপদ OAuth কানেকশন। শুধুমাত্র আপনার পেজের মেসেজ ও পোস্ট অ্যাক্সেস করা হবে।
         </div>
     </div>
-
     <script>
         async function connectFacebook() {
             const btn = document.getElementById('connectBtn');
             const loading = document.getElementById('loading');
-
-            // Show loading state
             btn.disabled = true;
             btn.style.opacity = '0.6';
             loading.style.display = 'block';
-
             try {
-                // Get auth URL from backend
                 const response = await fetch('/api/auth/facebook/login');
                 const data = await response.json();
-
                 if (data.auth_url) {
-                    // Redirect to Facebook OAuth
                     window.location.href = data.auth_url;
                 } else {
-                    alert('Error: Could not generate Facebook login URL');
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                    loading.style.display = 'none';
+                    alert('ফেসবুক লগইন URL তৈরি করা যায়নি');
+                    btn.disabled = false; btn.style.opacity = '1'; loading.style.display = 'none';
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert('Connection failed. Please try again.');
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                loading.style.display = 'none';
+                alert('কানেকশন ব্যর্থ। আবার চেষ্টা করুন।');
+                btn.disabled = false; btn.style.opacity = '1'; loading.style.display = 'none';
             }
         }
     </script>

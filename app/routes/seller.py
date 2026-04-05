@@ -21,10 +21,10 @@ class SellerCreate(BaseModel):
     fb_page_id: str
     fb_page_name: str
     fb_page_access_token: str
-    delivery_info: str = "Dhaka: 60 BDT, Outside Dhaka: 120 BDT"
-    payment_methods: str = "bKash, Nagad, COD"
-    delivery_time: str = "Dhaka: 1-2 days, Outside Dhaka: 3-5 days"
-    return_policy: str = "7 days return policy"
+    delivery_info: str = "ঢাকা: ৬০ টাকা, ঢাকার বাইরে: ১২০ টাকা"
+    payment_methods: str = "বিকাশ, নগদ, ক্যাশ অন ডেলিভারি"
+    delivery_time: str = "ঢাকা: ১-২ দিন, ঢাকার বাইরে: ৩-৫ দিন"
+    return_policy: str = "৭ দিনের রিটার্ন পলিসি"
 
 
 class SellerUpdate(BaseModel):

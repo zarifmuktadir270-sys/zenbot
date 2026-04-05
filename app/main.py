@@ -18,6 +18,18 @@ from app.routes.auth import router as auth_router
 # Create tables on first import (serverless cold start)
 Base.metadata.create_all(bind=engine)
 
+# Auto-migrate: add new columns to existing tables
+from sqlalchemy import text, inspect
+try:
+    inspector = inspect(engine)
+    seller_columns = [c['name'] for c in inspector.get_columns('sellers')]
+    with engine.connect() as conn:
+        if 'admin_fb_user_id' not in seller_columns:
+            conn.execute(text("ALTER TABLE sellers ADD COLUMN admin_fb_user_id VARCHAR"))
+            conn.commit()
+except Exception as e:
+    print(f"Migration note: {e}")
+
 # === APP ===
 app = FastAPI(
     title="E-commerce CS Agent",
@@ -69,6 +81,31 @@ async def onboard():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.get("/debug")
+async def debug():
+    """Temporary debug endpoint to check database state."""
+    from app.models.models import Seller
+    db = SessionLocal()
+    try:
+        sellers = db.query(Seller).all()
+        return {
+            "sellers": [
+                {
+                    "id": s.id[:8],
+                    "page_id": s.fb_page_id,
+                    "page_name": s.fb_page_name,
+                    "has_token": bool(s.fb_page_access_token),
+                    "has_admin_id": bool(getattr(s, 'admin_fb_user_id', None)),
+                    "is_active": s.is_active,
+                }
+                for s in sellers
+            ],
+            "total": len(sellers),
+        }
+    finally:
+        db.close()
 
 
 @app.get("/api/cron/refresh-products")

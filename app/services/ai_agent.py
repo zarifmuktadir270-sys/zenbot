@@ -1,18 +1,19 @@
 """
 AI Agent — The brain of the chatbot.
-Uses Claude to understand customer messages and respond intelligently.
+Uses Kilo Gateway (OpenAI-compatible) to understand customer messages and respond intelligently.
 """
 
 import json
 from typing import List
-import anthropic
+import httpx
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.models import Seller, Product, Customer, Conversation, Order
 
-client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+KILO_BASE_URL = "https://api.kilo.ai/api/gateway"
+KILO_MODEL = "qwen/qwen3.6-plus:free"
 
 
 def build_system_prompt(seller: Seller, products: List[Product]) -> str:
@@ -30,49 +31,59 @@ def build_system_prompt(seller: Seller, products: List[Product]) -> str:
             product_list += "\n"
 
     if not product_list:
-        product_list = "No products loaded yet. Ask the customer to describe what they want and you'll check with the shop owner."
+        product_list = "No products loaded yet."
 
-    return f"""You are the customer service assistant for "{seller.fb_page_name}", a shop on Facebook.
-You chat with customers on Messenger. Be friendly, helpful, and conversational.
+    return f"""You are the AI customer service assistant for "{seller.fb_page_name}" Facebook shop. You chat with customers on Messenger.
 
-## YOUR RULES:
-1. Reply in the SAME LANGUAGE the customer uses. If they write Bangla, reply in Bangla. If Banglish (Bangla in English letters), reply in Banglish. If English, reply in English.
-2. Keep replies SHORT — 1-3 sentences max. Customers are on mobile.
-3. NEVER make up information. Only share what you know from the product list and shop info below.
-4. If you don't know something, say "Apni ektu wait korun, shop owner ke jigges kore janacchi" (or equivalent in their language).
-5. When a customer wants to ORDER, collect: (a) product name/details, (b) full name, (c) phone number, (d) delivery address, (e) payment method. Collect one or two at a time, don't dump all questions at once.
-6. You are NOT human. If asked, say you are an AI assistant for the shop.
-7. Be warm and use common BD greetings like "vai", "apu", "ji" naturally.
+## LANGUAGE STYLE (VERY IMPORTANT):
+- Write in natural Bangladeshi style: Bangla sentences with English terms mixed in naturally
+- Keep English words in English: brand names, product names, "order", "delivery", "confirm", "cancel", "size", "color", "stock", "available", "bKash", "Nagad", "COD" etc.
+- Write Bangla parts in proper Bangla script (NOT Banglish/Roman letters)
+- Example good replies:
+  - "আপনার order টি confirm হয়েছে! Delivery ২-৩ দিনের মধ্যে পাবেন।"
+  - "জি, এই product টি available আছে। Size আর color কোনটা চাইবেন?"
+  - "আপনার total হবে ৮৫০ টাকা। Payment method কোনটা prefer করবেন - bKash, Nagad নাকি COD?"
+- NEVER write full Banglish like "apni ki order korte chan" — this looks ugly
+- NEVER write full English either — customers prefer Bangla
 
-## SHOP INFORMATION:
-- Shop Name: {seller.fb_page_name}
-- Delivery Charges: {seller.delivery_info}
-- Payment Methods: {seller.payment_methods}
-- Delivery Time: {seller.delivery_time}
-- Return Policy: {seller.return_policy}
+## RULES:
+1. Keep replies SHORT — 1-3 lines max. Customers are on mobile.
+2. Never make up info. Only use the product list and shop info below.
+3. যা জানো না, বলো: "একটু wait করুন, shop owner এর কাছ থেকে জেনে জানাচ্ছি।"
+4. For orders, collect info step by step:
+   - First: কোন product চান
+   - Then: নাম ও phone number
+   - Then: delivery address
+   - Last: payment method
+5. You are an AI assistant, not human. If asked, say you are the shop's AI assistant.
+6. Be polite — use "আপনি", "জি", "ধন্যবাদ"
+7. No emojis overload — max 1-2 per message
 
-## PRODUCT CATALOG:
+## SHOP INFO:
+- Shop: {seller.fb_page_name}
+- Delivery charge: {seller.delivery_info}
+- Payment: {seller.payment_methods}
+- Delivery time: {seller.delivery_time}
+- Return policy: {seller.return_policy}
+
+## PRODUCTS:
 {product_list}
 
-## HOW TO RESPOND:
-Always respond with a JSON object (and nothing else):
+## RESPONSE FORMAT:
+Always respond with ONLY this JSON (nothing else):
 {{
-  "reply": "your message to the customer",
+  "reply": "your message to customer in Bangla+English mix",
   "intent": "inquiry|order|complaint|tracking|greeting|general",
   "order_data": null or {{"product": "...", "customer_name": "...", "phone": "...", "address": "...", "payment_method": "...", "notes": "..."}},
   "needs_human": false or true
 }}
 
-- Set "needs_human" to true ONLY for: complaints, custom/bulk orders, issues you can't resolve.
-- Set "order_data" when you have collected ALL order details from the customer. Fill only the fields you have so far, leave others as null.
-- For "intent": use "order" when customer is in the process of ordering.
-
-Today's date: {datetime.now(timezone.utc).strftime("%Y-%m-%d %A")}
+Today: {datetime.now(timezone.utc).strftime("%Y-%m-%d %A")}
 """
 
 
 def get_conversation_history(db: Session, seller_id: str, customer_id: str, limit: int = 20) -> List[dict]:
-    """Get recent conversation history formatted for Claude."""
+    """Get recent conversation history formatted for the AI."""
     messages = (
         db.query(Conversation)
         .filter(Conversation.seller_id == seller_id, Conversation.customer_id == customer_id)
@@ -86,7 +97,7 @@ def get_conversation_history(db: Session, seller_id: str, customer_id: str, limi
     for msg in messages:
         role = "user" if msg.sender == "customer" else "assistant"
         content = msg.message
-        # For assistant messages, wrap in JSON format as Claude expects
+        # For assistant messages, wrap in JSON format
         if role == "assistant":
             content = json.dumps({"reply": content, "intent": msg.intent or "general", "order_data": None, "needs_human": False})
         formatted.append({"role": role, "content": content})
@@ -96,7 +107,7 @@ def get_conversation_history(db: Session, seller_id: str, customer_id: str, limi
 
 def get_ai_response(db: Session, seller: Seller, customer: Customer, message: str) -> dict:
     """
-    Process a customer message and get AI response.
+    Process a customer message and get AI response via Kilo Gateway.
     Returns: {"reply": str, "intent": str, "order_data": dict|None, "needs_human": bool}
     """
 
@@ -112,7 +123,7 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
     # Add current message
     history.append({"role": "user", "content": message})
 
-    # Deduplicate consecutive same-role messages (Claude API requirement)
+    # Deduplicate consecutive same-role messages
     cleaned = []
     for msg in history:
         if cleaned and cleaned[-1]["role"] == msg["role"]:
@@ -124,20 +135,33 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
     if cleaned and cleaned[0]["role"] != "user":
         cleaned = cleaned[1:]
 
-    # Call Claude
-    response = client.messages.create(
-        model="claude-sonnet-4-5-20250514",
-        max_tokens=300,
-        system=system_prompt,
-        messages=cleaned,
-    )
+    # Add system message at the beginning
+    messages = [{"role": "system", "content": system_prompt}] + cleaned
 
-    # Parse response
-    raw_text = response.content[0].text.strip()
+    # Call Kilo Gateway (OpenAI-compatible)
+    with httpx.Client(timeout=30) as http_client:
+        response = http_client.post(
+            f"{KILO_BASE_URL}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.kilo_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": KILO_MODEL,
+                "messages": messages,
+                "max_tokens": 300,
+                "temperature": 0.7,
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+    # Extract response text
+    raw_text = data["choices"][0]["message"]["content"].strip()
 
     # Try to parse as JSON
     try:
-        # Handle cases where Claude wraps JSON in markdown code blocks
+        # Handle cases where AI wraps JSON in markdown code blocks
         if raw_text.startswith("```"):
             raw_text = raw_text.split("```")[1]
             if raw_text.startswith("json"):
@@ -146,7 +170,7 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
 
         result = json.loads(raw_text)
     except json.JSONDecodeError:
-        # If Claude didn't return JSON, use the raw text as reply
+        # If AI didn't return JSON, use the raw text as reply
         result = {
             "reply": raw_text,
             "intent": "general",
@@ -175,6 +199,7 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
 
     # If order data is complete, create an order
     order_data = result.get("order_data")
+    new_order = None
     if order_data and all(order_data.get(f) for f in ["product", "customer_name", "phone", "address"]):
         order = Order(
             seller_id=seller.id,
@@ -188,6 +213,7 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
             status="pending",
         )
         db.add(order)
+        db.flush()  # Get the order ID before commit
 
         # Update customer info
         customer.name = order_data["customer_name"]
@@ -195,6 +221,20 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
         customer.address = order_data["address"]
         customer.total_orders = (customer.total_orders or 0) + 1
 
+        new_order = order
+
     db.commit()
+
+    # Attach order info to result if created
+    if new_order:
+        result["new_order"] = {
+            "id": new_order.id[:8],  # Short ID for customer
+            "full_id": new_order.id,
+            "product": order_data["product"],
+            "customer_name": order_data["customer_name"],
+            "phone": order_data["phone"],
+            "address": order_data["address"],
+            "payment_method": order_data.get("payment_method", "COD"),
+        }
 
     return result

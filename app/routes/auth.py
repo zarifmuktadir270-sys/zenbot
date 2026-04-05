@@ -114,7 +114,16 @@ async def facebook_callback(
             long_lived_data = long_lived_response.json()
             user_access_token = long_lived_data.get("access_token", user_access_token)
 
-        # 3. Get list of pages user manages
+        # 3. Get admin's user ID (for order notifications)
+        me_response = await client.get(
+            "https://graph.facebook.com/v18.0/me",
+            params={"access_token": user_access_token, "fields": "id,name"}
+        )
+        admin_user_id = None
+        if me_response.status_code == 200:
+            admin_user_id = me_response.json().get("id")
+
+        # 4. Get list of pages user manages
         pages_response = await client.get(
             "https://graph.facebook.com/v18.0/me/accounts",
             params={"access_token": user_access_token}
@@ -142,13 +151,8 @@ async def facebook_callback(
         page_name = page["name"]
         page_access_token = page["access_token"]
 
-        # 5. Check if page already registered
+        # 5. Check if page already registered — update if exists
         existing_seller = db.query(Seller).filter(Seller.fb_page_id == page_id).first()
-        if existing_seller:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Page '{page_name}' is already registered!"
-            )
 
         # 6. Subscribe page to webhook
         webhook_response = await client.post(
@@ -162,21 +166,31 @@ async def facebook_callback(
         if webhook_response.status_code != 200:
             print(f"Warning: Failed to subscribe webhook: {webhook_response.text}")
 
-        # 7. Create seller in database
-        seller = Seller(
-            fb_page_id=page_id,
-            fb_page_name=page_name,
-            fb_page_access_token=page_access_token,
-            delivery_info="Dhaka: 60 BDT, Outside Dhaka: 120 BDT",
-            payment_methods="bKash, Nagad, COD",
-            delivery_time="Dhaka: 1-2 days, Outside Dhaka: 3-5 days",
-            return_policy="7 days return policy",
-            plan="trial",
-            plan_expires_at=datetime.now(timezone.utc) + timedelta(days=14),
-        )
-        db.add(seller)
-        db.commit()
-        db.refresh(seller)
+        if existing_seller:
+            # Reconnect — update token and admin ID
+            existing_seller.fb_page_access_token = page_access_token
+            existing_seller.admin_fb_user_id = admin_user_id
+            existing_seller.fb_page_name = page_name
+            seller = existing_seller
+            db.commit()
+            db.refresh(seller)
+        else:
+            # 7. Create new seller
+            seller = Seller(
+                fb_page_id=page_id,
+                fb_page_name=page_name,
+                fb_page_access_token=page_access_token,
+                admin_fb_user_id=admin_user_id,
+                delivery_info="ঢাকা: ৬০ টাকা, ঢাকার বাইরে: ১২০ টাকা",
+                payment_methods="bKash, Nagad, COD",
+                delivery_time="ঢাকা: ১-২ দিন, ঢাকার বাইরে: ৩-৫ দিন",
+                return_policy="৭ দিনের মধ্যে return policy",
+                plan="trial",
+                plan_expires_at=datetime.now(timezone.utc) + timedelta(days=14),
+            )
+            db.add(seller)
+            db.commit()
+            db.refresh(seller)
 
         # 8. Scrape products from page
         try:

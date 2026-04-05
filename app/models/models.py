@@ -18,6 +18,7 @@ class Seller(Base):
     fb_page_id = Column(String, unique=True, nullable=False)
     fb_page_name = Column(String)
     fb_page_access_token = Column(String, nullable=False)
+    admin_fb_user_id = Column(String)  # Page admin's FB user ID for notifications
 
     # Seller setup info (the 4 questions)
     delivery_info = Column(Text, default="Dhaka: 60 BDT, Outside Dhaka: 120 BDT")

@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     fb_verify_token: str = "my_verify_token_123"
     fb_page_access_token: str = ""  # Deprecated: Use OAuth instead
 
-    # Anthropic
-    anthropic_api_key: str = ""
+    # AI (Kilo Gateway - OpenAI compatible)
+    kilo_api_key: str = ""
 
     # Database (SQLite for local/testing, PostgreSQL for production)
     database_url: str = "sqlite:///./ecom_agent.db"
