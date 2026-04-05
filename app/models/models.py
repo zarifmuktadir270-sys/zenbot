@@ -57,6 +57,7 @@ class Product(Base):
     price_text = Column(String)  # Original text like "1200 BDT" or "1200/-"
     category = Column(String)
     image_url = Column(String)
+    stock = Column(Integer, default=-1)  # -1 = unlimited, 0 = out of stock, >0 = exact count
     is_available = Column(Boolean, default=True)
     raw_post_text = Column(Text)  # Full original post text for AI context
 

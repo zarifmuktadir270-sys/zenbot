@@ -43,6 +43,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     image_url: Optional[str] = None
     is_available: Optional[bool] = None
+    stock: Optional[int] = None
 
 
 class ProductCreate(BaseModel):
@@ -51,6 +52,7 @@ class ProductCreate(BaseModel):
     price_text: Optional[str] = None
     description: Optional[str] = None
     image_url: Optional[str] = None
+    stock: Optional[int] = -1
 
 
 class MediaCreate(BaseModel):
@@ -221,6 +223,7 @@ async def get_products(seller_id: str, db: Session = Depends(get_db)):
             "description": p.description,
             "image_url": p.image_url,
             "is_available": p.is_available,
+            "stock": p.stock,
         }
         for p in products
     ]
@@ -267,7 +270,7 @@ async def add_product(seller_id: str, data: ProductCreate, db: Session = Depends
     product = Product(
         seller_id=seller_id, name=data.name, price=data.price,
         price_text=data.price_text, description=data.description,
-        image_url=data.image_url,
+        image_url=data.image_url, stock=data.stock,
     )
     db.add(product)
     db.commit()
@@ -279,7 +282,7 @@ async def edit_product(seller_id: str, product_id: str, data: ProductUpdate, db:
     product = db.query(Product).filter(Product.id == product_id, Product.seller_id == seller_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    for field in ["name", "price", "price_text", "description", "image_url", "is_available"]:
+    for field in ["name", "price", "price_text", "description", "image_url", "is_available", "stock"]:
         val = getattr(data, field, None)
         if val is not None:
             setattr(product, field, val)

@@ -16,6 +16,8 @@ KILO_BASE_URL = "https://api.kilo.ai/api/gateway"
 KILO_MODELS = [
     "bytedance-seed/dola-seed-2.0-pro:free",
     "qwen/qwen3.6-plus:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "arcee-ai/trinity-large-preview:free",
 ]
 
 
@@ -35,6 +37,12 @@ def build_system_prompt(seller: Seller, products: List[Product], media_list: Lis
                 product_list += f" | Details: {p.description[:150]}"
             if p.image_url:
                 product_list += f" | HAS_IMAGE"
+            # Show stock info
+            if p.stock is not None and p.stock >= 0:
+                if p.stock == 0:
+                    product_list += f" | OUT OF STOCK"
+                else:
+                    product_list += f" | Stock: {p.stock} units"
             product_list += "\n"
 
     if not product_list:
@@ -55,7 +63,7 @@ def build_system_prompt(seller: Seller, products: List[Product], media_list: Lis
     if custom_inst:
         custom_section += f"\n## OWNER'S INSTRUCTIONS (follow these strictly):\n{custom_inst}\n"
     if learned:
-        custom_section += f"\n## LEARNED KNOWLEDGE (owner taught you these):\n{learned}\n"
+        custom_section += f"\n## LEARNED KNOWLEDGE (owner taught you these):\n{learned}\nIMPORTANT: Only mention knowledge that is DIRECTLY relevant to the customer's current question. Do NOT dump all knowledge at once.\n"
 
     return f"""You are "{bot_name}", the AI customer service assistant for "{seller.fb_page_name}" Facebook shop. You chat with customers on Messenger.
 
@@ -82,6 +90,8 @@ def build_system_prompt(seller: Seller, products: List[Product], media_list: Lis
 5. You are an AI assistant, not human. If asked, say you are the shop's AI assistant.
 6. Be polite — use "আপনি", "জি", "ধন্যবাদ"
 7. No emojis overload — max 1-2 per message
+8. Check product stock before confirming orders. If stock is 0 or "OUT OF STOCK", tell customer it's unavailable. If stock shows units, mention availability.
+9. Only share information relevant to the customer's question. Do NOT list all products or all knowledge at once.
 
 ## SHOP INFO:
 - Shop: {seller.fb_page_name}
@@ -168,9 +178,10 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
     messages = [{"role": "system", "content": system_prompt}] + cleaned
 
     # Call Kilo Gateway (OpenAI-compatible) — try models with fallback
+    import time
     data = None
     with httpx.Client(timeout=30) as http_client:
-        for model in KILO_MODELS:
+        for attempt, model in enumerate(KILO_MODELS):
             try:
                 response = http_client.post(
                     f"{KILO_BASE_URL}/chat/completions",
@@ -186,10 +197,21 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
                     },
                 )
                 response.raise_for_status()
-                data = response.json()
+                resp_data = response.json()
+                # Verify response has content
+                content = resp_data.get("choices", [{}])[0].get("message", {}).get("content")
+                if not content:
+                    print(f"Model {model} returned empty, trying next...")
+                    continue
+                data = resp_data
                 break
             except httpx.HTTPStatusError as e:
                 print(f"Model {model} failed ({e.response.status_code}), trying next...")
+                if attempt == 0:
+                    time.sleep(1)  # Brief pause before trying next
+                continue
+            except Exception as e:
+                print(f"Model {model} error: {e}, trying next...")
                 continue
         if data is None:
             raise Exception("All AI models are unavailable")
@@ -252,6 +274,15 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
         )
         db.add(order)
         db.flush()  # Get the order ID before commit
+
+        # Decrement stock for matching product
+        for p in products:
+            if p.name.lower() in order_data["product"].lower() or order_data["product"].lower() in p.name.lower():
+                if p.stock is not None and p.stock > 0:
+                    p.stock -= 1
+                    if p.stock == 0:
+                        p.is_available = False
+                break
 
         # Update customer info
         customer.name = order_data["customer_name"]

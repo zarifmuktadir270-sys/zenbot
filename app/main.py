@@ -32,6 +32,11 @@ try:
         ]:
             if col_name not in seller_columns:
                 conn.execute(text(f"ALTER TABLE sellers ADD COLUMN {col_name} {col_type}"))
+
+        product_columns = [c['name'] for c in inspector.get_columns('products')]
+        if 'stock' not in product_columns:
+            conn.execute(text("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT -1"))
+
         conn.commit()
 except Exception as e:
     print(f"Migration note: {e}")
@@ -109,7 +114,7 @@ async def debug():
         seller_data = []
         for s in sellers:
             info = {
-                "id": s.id[:8],
+                "id": s.id,
                 "page_id": s.fb_page_id,
                 "page_name": s.fb_page_name,
                 "has_token": bool(s.fb_page_access_token),
