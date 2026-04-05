@@ -192,7 +192,7 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
                     json={
                         "model": model,
                         "messages": messages,
-                        "max_tokens": 300,
+                        "max_tokens": 500,  # Increased to prevent response cutoff
                         "temperature": 0.7,
                     },
                 )
@@ -229,13 +229,33 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
             raw_text = raw_text.strip()
 
         result = json.loads(raw_text)
-    except json.JSONDecodeError:
-        # If AI didn't return JSON, use the raw text as reply
+
+        # Ensure result has required fields
+        if not isinstance(result, dict) or "reply" not in result:
+            raise ValueError("Invalid response format")
+
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"Failed to parse AI response: {e}")
+        print(f"Raw response: {raw_text[:200]}")
+
+        # Try to extract reply field from partial JSON using regex
+        try:
+            import re
+            reply_match = re.search(r'"reply":\s*"([^"]*(?:\\.[^"]*)*)"', raw_text)
+            if reply_match:
+                extracted_reply = reply_match.group(1).replace('\\"', '"').replace('\\n', '\n')
+            else:
+                extracted_reply = "দুঃখিত, আমি এখন একটু সমস্যায় পড়েছি। একটু পরে আবার চেষ্টা করুন।"
+        except Exception as extract_error:
+            print(f"Extraction failed: {extract_error}")
+            extracted_reply = "দুঃখিত, আমি এখন একটু সমস্যায় পড়েছি। একটু পরে আবার চেষ্টা করুন।"
+
+        # Use fallback response
         result = {
-            "reply": raw_text,
+            "reply": extracted_reply,
             "intent": "general",
             "order_data": None,
-            "needs_human": False,
+            "needs_human": True,
         }
 
     # Save conversation to database
