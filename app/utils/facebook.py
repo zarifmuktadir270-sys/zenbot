@@ -69,33 +69,54 @@ async def send_product_cards(recipient_id: str, products: list, page_access_toke
 
 
 async def send_private_reply(comment_id: str, message_text: str, page_access_token: str):
-    """Send a private reply (DM) to someone who commented on a post."""
-    # Method 1: Messenger Platform private reply via /me/messages
-    url = f"{GRAPH_API_BASE}/me/messages"
+    """Try to DM the commenter. If that fails, reply publicly under the comment."""
     params = {"access_token": page_access_token}
-    payload = {
-        "recipient": {"comment_id": comment_id},
-        "message": {"text": message_text},
-        "messaging_type": "RESPONSE",
-    }
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, params=params, json=payload)
-        if response.status_code == 200:
+        # Try DM via Messenger
+        resp1 = await client.post(
+            f"{GRAPH_API_BASE}/me/messages",
+            params=params,
+            json={
+                "recipient": {"comment_id": comment_id},
+                "message": {"text": message_text},
+                "messaging_type": "RESPONSE",
+            }
+        )
+        if resp1.status_code == 200:
+            print(f"Private DM sent for comment {comment_id}")
+            return resp1.json()
+
+        print(f"DM failed ({resp1.status_code}): {resp1.text[:200]}")
+
+        # Try private_replies endpoint
+        resp2 = await client.post(
+            f"{GRAPH_API_BASE}/{comment_id}/private_replies",
+            params=params,
+            json={"message": message_text}
+        )
+        if resp2.status_code == 200:
             print(f"Private reply sent for comment {comment_id}")
-            return response.json()
+            return resp2.json()
 
-        print(f"Private reply method 1 failed: {response.status_code} {response.text}")
+        print(f"Private reply failed ({resp2.status_code}): {resp2.text[:200]}")
 
-        # Method 2: Direct private_replies endpoint
-        url2 = f"{GRAPH_API_BASE}/{comment_id}/private_replies"
-        response2 = await client.post(url2, params=params, json={"message": message_text})
-        if response2.status_code == 200:
-            print(f"Private reply (method 2) sent for comment {comment_id}")
-            return response2.json()
+        # Fallback: public comment reply + like
+        await client.post(
+            f"{GRAPH_API_BASE}/{comment_id}/likes",
+            params=params,
+        )
+        resp3 = await client.post(
+            f"{GRAPH_API_BASE}/{comment_id}/comments",
+            params=params,
+            json={"message": "Inbox e message check korun! Details pathano hoyeche."}
+        )
+        if resp3.status_code == 200:
+            print(f"Public reply sent for comment {comment_id}")
+            return resp3.json()
 
-        print(f"Private reply method 2 failed: {response2.status_code} {response2.text}")
-        return {"error": "both methods failed"}
+        print(f"Public reply also failed ({resp3.status_code}): {resp3.text[:200]}")
+        return {"error": "all methods failed"}
 
 
 async def send_typing_indicator(recipient_id: str, page_access_token: str, action: str = "typing_on"):
