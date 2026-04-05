@@ -14,9 +14,9 @@ from app.models.models import Seller, Product, Customer, Conversation, Order
 
 KILO_BASE_URL = "https://api.kilo.ai/api/gateway"
 KILO_MODELS = [
-    "qwen/qwen3.6-plus:free",
-    "bytedance-seed/dola-seed-2.0-pro:free",
     "stepfun/step-3.5-flash:free",
+    "bytedance-seed/dola-seed-2.0-pro:free",
+    "qwen/qwen3.6-plus:free",
 ]
 
 
@@ -25,13 +25,15 @@ def build_system_prompt(seller: Seller, products: List[Product]) -> str:
 
     # Format product catalog from scraped Facebook posts
     product_list = ""
-    for p in products:
+    for i, p in enumerate(products):
         if p.is_available:
-            product_list += f"- {p.name}"
+            product_list += f"- [{i+1}] {p.name}"
             if p.price:
                 product_list += f" | Price: {p.price_text or str(p.price) + ' BDT'}"
             if p.description:
-                product_list += f" | Details: {p.description[:200]}"
+                product_list += f" | Details: {p.description[:150]}"
+            if p.image_url:
+                product_list += f" | HAS_IMAGE"
             product_list += "\n"
 
     if not product_list:
@@ -78,9 +80,12 @@ Always respond with ONLY this JSON (nothing else):
 {{
   "reply": "your message to customer in Bangla+English mix",
   "intent": "inquiry|order|complaint|tracking|greeting|general",
+  "show_products": null or [1, 2, 3],
   "order_data": null or {{"product": "...", "customer_name": "...", "phone": "...", "address": "...", "payment_method": "...", "notes": "..."}},
   "needs_human": false or true
 }}
+
+IMPORTANT: When a customer asks about products, asks "ki ache?", wants to see items, or asks about a specific product — set "show_products" to the product numbers from the list above (e.g. [1, 2, 3]). This will show them product photos automatically.
 
 Today: {datetime.now(timezone.utc).strftime("%Y-%m-%d %A")}
 """

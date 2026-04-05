@@ -2,18 +2,19 @@
 Facebook Messenger Webhook — Receives messages from customers and sends AI replies.
 """
 
-from fastapi import APIRouter, Request, Query, Depends, HTTPException
+from fastapi import APIRouter, Request, Query, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, String, DateTime
 from datetime import datetime, timezone
 
 from app.config import settings
-from app.models.database import get_db, Base, engine
-from app.models.models import Seller, Customer
+from app.models.database import get_db, Base, engine, SessionLocal
+from app.models.models import Seller, Customer, Product
 from app.services.ai_agent import get_ai_response
 from app.utils.facebook import (
     send_message,
     send_typing_indicator,
+    send_product_cards,
     get_user_profile,
     verify_webhook_signature,
 )
@@ -42,19 +43,19 @@ async def verify_webhook(
 
 
 @router.post("/webhook")
-async def receive_message(request: Request, db: Session = Depends(get_db)):
+async def receive_message(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     body = await request.body()
     # Signature verification temporarily relaxed for debugging
     signature = request.headers.get("X-Hub-Signature-256", "")
     if signature and not verify_webhook_signature(body, signature):
         print(f"Signature mismatch - got: {signature[:30]}...")
-        # Don't block — log and continue for now
 
     data = await request.json()
 
     if data.get("object") != "page":
         return {"status": "ignored"}
 
+    tasks = []
     for entry in data.get("entry", []):
         page_id = entry.get("id")
 
@@ -76,10 +77,24 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
 
             sender_id = event["sender"]["id"]
             message_text = message["text"]
+            tasks.append((page_id, sender_id, message_text))
 
-            await handle_customer_message(db, page_id, sender_id, message_text)
+    # Process messages in background so Facebook gets 200 OK immediately
+    for page_id, sender_id, message_text in tasks:
+        background_tasks.add_task(process_message_background, page_id, sender_id, message_text)
 
     return {"status": "ok"}
+
+
+async def process_message_background(page_id: str, sender_id: str, message_text: str):
+    """Background wrapper — creates its own DB session."""
+    db = SessionLocal()
+    try:
+        await handle_customer_message(db, page_id, sender_id, message_text)
+    except Exception as e:
+        print(f"Background processing error: {e}")
+    finally:
+        db.close()
 
 
 async def handle_customer_message(db: Session, page_id: str, sender_id: str, message_text: str):
@@ -121,6 +136,25 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
     reply_text = result.get("reply", "")
     if reply_text:
         await send_message(sender_id, reply_text, seller.fb_page_access_token)
+
+    # Send product cards with images if AI requested
+    show_products = result.get("show_products")
+    if show_products:
+        products = db.query(Product).filter(
+            Product.seller_id == seller.id,
+            Product.is_available == True,
+        ).all()
+        cards = []
+        for idx in show_products:
+            if 1 <= idx <= len(products):
+                p = products[idx - 1]
+                cards.append({
+                    "name": p.name,
+                    "price": p.price_text or (f"{p.price} BDT" if p.price else ""),
+                    "image_url": p.image_url,
+                })
+        if cards:
+            await send_product_cards(sender_id, cards, seller.fb_page_access_token)
 
     # If a new order was created, send confirmation + notify seller
     new_order = result.get("new_order")
