@@ -13,7 +13,11 @@ from app.config import settings
 from app.models.models import Seller, Product, Customer, Conversation, Order
 
 KILO_BASE_URL = "https://api.kilo.ai/api/gateway"
-KILO_MODEL = "qwen/qwen3.6-plus:free"
+KILO_MODELS = [
+    "qwen/qwen3.6-plus:free",
+    "bytedance-seed/dola-seed-2.0-pro:free",
+    "stepfun/step-3.5-flash:free",
+]
 
 
 def build_system_prompt(seller: Seller, products: List[Product]) -> str:
@@ -138,23 +142,32 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
     # Add system message at the beginning
     messages = [{"role": "system", "content": system_prompt}] + cleaned
 
-    # Call Kilo Gateway (OpenAI-compatible)
+    # Call Kilo Gateway (OpenAI-compatible) — try models with fallback
+    data = None
     with httpx.Client(timeout=30) as http_client:
-        response = http_client.post(
-            f"{KILO_BASE_URL}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.kilo_api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": KILO_MODEL,
-                "messages": messages,
-                "max_tokens": 300,
-                "temperature": 0.7,
-            },
-        )
-        response.raise_for_status()
-        data = response.json()
+        for model in KILO_MODELS:
+            try:
+                response = http_client.post(
+                    f"{KILO_BASE_URL}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.kilo_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "max_tokens": 300,
+                        "temperature": 0.7,
+                    },
+                )
+                response.raise_for_status()
+                data = response.json()
+                break
+            except httpx.HTTPStatusError as e:
+                print(f"Model {model} failed ({e.response.status_code}), trying next...")
+                continue
+        if data is None:
+            raise Exception("All AI models are unavailable")
 
     # Extract response text
     raw_text = data["choices"][0]["message"]["content"].strip()
