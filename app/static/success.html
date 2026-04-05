@@ -3,285 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connected - Zen Labs</title>
+    <title>Connected — Zen Labs</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        :root {
-            --primary: #6366f1;
-            --primary-light: #a5b4fc;
-            --accent: #06b6d4;
-            --success: #22c55e;
-            --success-bg: rgba(34, 197, 94, 0.1);
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-card-hover: rgba(30, 41, 59, 0.8);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border: rgba(148, 163, 184, 0.1);
-        }
-
         body {
-            font-family: 'Inter', 'Noto Sans Bengali', -apple-system, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .bg-gradient {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background:
-                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 197, 94, 0.1), transparent),
-                radial-gradient(ellipse 60% 40% at 80% 50%, rgba(6, 182, 212, 0.06), transparent);
-            z-index: 0;
-        }
-
-        .grid-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image:
-                linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px; z-index: 0;
-        }
-
-        .page-wrapper {
-            position: relative; z-index: 1;
-            min-height: 100vh; display: flex; flex-direction: column;
+            font-family: 'Inter', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #fbfbfd;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
         }
 
         nav {
-            padding: 20px 40px;
-            display: flex; align-items: center; justify-content: space-between;
+            max-width: 980px; margin: 0 auto;
+            padding: 16px 24px;
         }
 
         .logo {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--text-primary);
+            text-decoration: none; color: #1d1d1f;
+            font-size: 18px; font-weight: 700; letter-spacing: -0.5px;
         }
 
-        .logo-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: 16px; color: white;
-        }
-
-        .logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-
-        /* Main content */
         .main {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            padding: 20px 20px 60px;
+            max-width: 560px; margin: 0 auto;
+            padding: 80px 24px 60px;
         }
 
-        .content { max-width: 600px; width: 100%; }
-
-        /* Success header */
-        .success-header { text-align: center; margin-bottom: 36px; }
-
-        .success-icon-wrap {
-            width: 72px; height: 72px; border-radius: 50%;
-            background: var(--success-bg);
-            border: 2px solid rgba(34, 197, 94, 0.2);
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 24px;
-            animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* Success indicator */
+        .status {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 14px; border-radius: 980px;
+            background: #e8f5e9; margin-bottom: 32px;
         }
 
-        .success-icon-wrap svg {
-            width: 32px; height: 32px; stroke: var(--success); fill: none; stroke-width: 3;
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #34c759;
         }
 
-        @keyframes scaleIn {
-            0% { transform: scale(0); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+        .status-text {
+            font-size: 13px; font-weight: 500; color: #1d1d1f;
         }
 
-        .success-header h1 {
-            font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px;
+        h1 {
+            font-size: 40px; font-weight: 700; line-height: 1.1;
+            letter-spacing: -0.03em; margin-bottom: 12px;
         }
 
-        .success-header p {
-            font-size: 15px; color: var(--text-secondary); line-height: 1.6;
-            font-family: 'Noto Sans Bengali', sans-serif;
+        .page-name { color: #0071e3; }
+
+        .subtitle {
+            font-size: 17px; color: #6e6e73; line-height: 1.5;
+            margin-bottom: 48px;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
         }
 
-        .page-name { color: var(--accent); font-weight: 600; }
-
-        /* Info cards */
-        .info-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-            margin-bottom: 28px;
+        /* Info row */
+        .info-row {
+            display: flex; gap: 1px; background: #e8e8ed;
+            border-radius: 14px; overflow: hidden;
+            margin-bottom: 40px;
         }
 
-        .info-card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 12px; padding: 18px;
+        .info-item {
+            flex: 1; background: #fff; padding: 20px;
+            text-align: center;
         }
 
-        .info-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .info-value { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-        .info-value.highlight { color: var(--accent); }
+        .info-value {
+            font-size: 22px; font-weight: 600; color: #1d1d1f;
+            margin-bottom: 2px;
+        }
+
+        .info-label {
+            font-size: 12px; color: #86868b; font-weight: 500;
+        }
 
         /* Steps */
-        .steps-card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 16px; padding: 28px; margin-bottom: 28px;
+        .section-title {
+            font-size: 13px; font-weight: 600; color: #86868b;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            margin-bottom: 20px;
         }
 
-        .steps-title {
-            font-size: 16px; font-weight: 600; margin-bottom: 20px;
-            display: flex; align-items: center; gap: 8px;
-        }
+        .steps { margin-bottom: 48px; }
 
         .step {
-            display: flex; align-items: flex-start; gap: 14px;
-            padding: 12px 0;
+            display: flex; align-items: flex-start; gap: 16px;
+            padding: 16px 0;
         }
 
-        .step + .step { border-top: 1px solid var(--border); }
+        .step + .step { border-top: 1px solid #f0f0f2; }
 
-        .step-indicator {
-            width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+        .step-check {
+            width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700;
+            margin-top: 1px;
         }
 
-        .step-indicator.active {
-            background: var(--success-bg); color: var(--success);
+        .step-check.done { background: #34c759; }
+        .step-check.next { background: #e8e8ed; }
+
+        .step-check svg {
+            width: 12px; height: 12px; stroke: white; fill: none; stroke-width: 2.5;
         }
 
-        .step-indicator.pending {
-            background: rgba(99, 102, 241, 0.1); color: var(--primary-light);
+        .step-check.next svg { stroke: #86868b; }
+
+        .step-content h3 {
+            font-size: 15px; font-weight: 600; color: #1d1d1f;
+            margin-bottom: 2px;
         }
 
-        .step-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
         .step-content p {
-            font-size: 13px; color: var(--text-muted); line-height: 1.5;
-            font-family: 'Noto Sans Bengali', sans-serif;
+            font-size: 14px; color: #86868b; line-height: 1.4;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
         }
 
-        /* Trial banner */
-        .trial-banner {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 12px; padding: 18px 24px;
+        /* Trial */
+        .trial {
+            background: #f5f5f7; border-radius: 16px;
+            padding: 28px 32px;
             display: flex; align-items: center; justify-content: space-between;
-            gap: 16px;
         }
 
-        .trial-info { font-size: 14px; color: var(--text-secondary); font-family: 'Noto Sans Bengali', sans-serif; }
-        .trial-info strong { color: var(--primary-light); }
+        .trial-text {
+            font-size: 15px; color: #6e6e73;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
 
-        .trial-days {
-            font-size: 28px; font-weight: 800;
-            background: linear-gradient(135deg, var(--primary-light), var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            white-space: nowrap;
+        .trial-text strong { color: #1d1d1f; font-weight: 600; }
+
+        .trial-badge {
+            font-size: 32px; font-weight: 700; color: #1d1d1f;
+            letter-spacing: -0.02em; white-space: nowrap;
         }
 
         @media (max-width: 600px) {
-            nav { padding: 16px 20px; }
-            .info-grid { grid-template-columns: 1fr; }
-            .trial-banner { flex-direction: column; text-align: center; }
-            .success-header h1 { font-size: 24px; }
+            h1 { font-size: 30px; }
+            .main { padding: 48px 24px 40px; }
+            .info-row { flex-direction: column; }
+            .trial { flex-direction: column; gap: 12px; text-align: center; }
         }
     </style>
 </head>
 <body>
-    <div class="bg-gradient"></div>
-    <div class="grid-bg"></div>
 
-    <div class="page-wrapper">
-        <nav>
-            <a href="/" class="logo">
-                <div class="logo-icon">Z</div>
-                <div class="logo-text">Zen Labs</div>
-            </a>
-        </nav>
+    <nav>
+        <a href="/" class="logo">Zen Labs</a>
+    </nav>
 
-        <section class="main">
-            <div class="content">
-                <div class="success-header">
-                    <div class="success-icon-wrap">
-                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                    </div>
-                    <h1>Successfully Connected!</h1>
-                    <p>
-                        <span class="page-name" id="pageName">Your Page</span> এখন Zen Labs AI দিয়ে চালু আছে।
-                        কাস্টমাররা মেসেজ করলেই অটো রিপ্লাই পাবে।
-                    </p>
+    <section class="main">
+        <div class="status">
+            <div class="status-dot"></div>
+            <span class="status-text">Connected</span>
+        </div>
+
+        <h1><span class="page-name" id="pageName">Your Page</span> is&nbsp;live.</h1>
+
+        <p class="subtitle">
+            আপনার AI assistant এখন চালু আছে। কাস্টমাররা মেসেজ করলেই রিপ্লাই পাবে।
+        </p>
+
+        <div class="info-row">
+            <div class="info-item">
+                <div class="info-value" id="pageId">—</div>
+                <div class="info-label">Page ID</div>
+            </div>
+            <div class="info-item">
+                <div class="info-value" id="productCount">—</div>
+                <div class="info-label">Products</div>
+            </div>
+            <div class="info-item">
+                <div class="info-value" id="trialDays">14</div>
+                <div class="info-label">Days left</div>
+            </div>
+        </div>
+
+        <div class="steps">
+            <div class="section-title">What's active</div>
+
+            <div class="step">
+                <div class="step-check done">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-
-                <div class="info-grid">
-                    <div class="info-card">
-                        <div class="info-label">Page ID</div>
-                        <div class="info-value" id="pageId">...</div>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">Products Synced</div>
-                        <div class="info-value highlight" id="productCount">...</div>
-                    </div>
-                </div>
-
-                <div class="steps-card">
-                    <div class="steps-title">What's happening now</div>
-
-                    <div class="step">
-                        <div class="step-indicator active">&#10003;</div>
-                        <div class="step-content">
-                            <h4>AI Assistant Active</h4>
-                            <p>Messenger এ কাস্টমারদের সব প্রশ্নের উত্তর দিচ্ছে এখনই।</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-indicator active">&#10003;</div>
-                        <div class="step-content">
-                            <h4>Products Auto-Synced</h4>
-                            <p>আপনার পেজের পোস্ট থেকে প্রোডাক্ট ক্যাটালগ তৈরি হচ্ছে।</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-indicator active">&#10003;</div>
-                        <div class="step-content">
-                            <h4>Comment Auto-DM</h4>
-                            <p>পোস্টে কমেন্ট করলে অটো ইনবক্সে মেসেজ যাবে।</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-indicator pending">&#8594;</div>
-                        <div class="step-content">
-                            <h4>Order Notifications</h4>
-                            <p>নতুন অর্ডার আসলে আপনাকে মেসেজে জানানো হবে।</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="trial-banner">
-                    <div class="trial-info">
-                        আপনার <strong>free trial</strong> শুরু হয়েছে।<br>
-                        কোনো credit card লাগবে না।
-                    </div>
-                    <div class="trial-days" id="trialDays">14 Days</div>
+                <div class="step-content">
+                    <h3>Messenger auto-reply</h3>
+                    <p>কাস্টমারদের প্রশ্নের উত্তর দিচ্ছে, ২৪/৭।</p>
                 </div>
             </div>
-        </section>
-    </div>
+
+            <div class="step">
+                <div class="step-check done">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="step-content">
+                    <h3>Product catalog synced</h3>
+                    <p>পেজের পোস্ট থেকে প্রোডাক্ট তৈরি হয়ে গেছে।</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-check done">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="step-content">
+                    <h3>Comment to inbox</h3>
+                    <p>পোস্টে কমেন্ট করলে অটো DM যাবে।</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-check next">
+                    <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </div>
+                <div class="step-content">
+                    <h3>Order notifications</h3>
+                    <p>নতুন অর্ডার আসলে আপনাকে Messenger এ জানাবে।</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="trial">
+            <div class="trial-text">
+                Free trial চালু আছে।<br>
+                <strong>কোনো card লাগবে না।</strong>
+            </div>
+            <div class="trial-badge" id="trialBadge">14 days</div>
+        </div>
+    </section>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('page_name')) document.getElementById('pageName').textContent = params.get('page_name');
-        if (params.get('page_id')) document.getElementById('pageId').textContent = params.get('page_id');
-        if (params.get('products')) document.getElementById('productCount').textContent = params.get('products') + ' products';
-        if (params.get('trial_expires')) {
-            const expires = new Date(params.get('trial_expires'));
-            const now = new Date();
-            const days = Math.max(0, Math.ceil((expires - now) / (1000 * 60 * 60 * 24)));
-            document.getElementById('trialDays').textContent = days + ' Days';
+        const p = new URLSearchParams(window.location.search);
+        if (p.get('page_name')) document.getElementById('pageName').textContent = p.get('page_name');
+        if (p.get('page_id')) document.getElementById('pageId').textContent = p.get('page_id');
+        if (p.get('products')) document.getElementById('productCount').textContent = p.get('products');
+        if (p.get('trial_expires')) {
+            const d = Math.max(0, Math.ceil((new Date(p.get('trial_expires')) - new Date()) / 86400000));
+            document.getElementById('trialDays').textContent = d;
+            document.getElementById('trialBadge').textContent = d + ' days';
         }
     </script>
 </body>

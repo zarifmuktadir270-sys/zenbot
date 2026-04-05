@@ -3,360 +3,310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zen Labs - AI Customer Service for Facebook Sellers</title>
+    <title>Zen Labs</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #a5b4fc;
-            --accent: #06b6d4;
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border: rgba(148, 163, 184, 0.1);
-            --glow: rgba(99, 102, 241, 0.15);
-        }
-
         body {
-            font-family: 'Inter', 'Noto Sans Bengali', -apple-system, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Animated background */
-        .bg-gradient {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background:
-                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
-                radial-gradient(ellipse 60% 40% at 80% 50%, rgba(6, 182, 212, 0.08), transparent),
-                radial-gradient(ellipse 60% 40% at 20% 80%, rgba(99, 102, 241, 0.08), transparent);
-            z-index: 0;
-        }
-
-        .grid-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image:
-                linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            z-index: 0;
-        }
-
-        /* Layout */
-        .page-wrapper {
-            position: relative; z-index: 1;
-            min-height: 100vh; display: flex; flex-direction: column;
+            font-family: 'Inter', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: #fbfbfd;
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Nav */
         nav {
-            padding: 20px 40px;
+            max-width: 980px; margin: 0 auto;
+            padding: 16px 24px;
             display: flex; align-items: center; justify-content: space-between;
         }
 
         .logo {
-            display: flex; align-items: center; gap: 10px;
-            text-decoration: none; color: var(--text-primary);
+            display: flex; align-items: center; gap: 8px;
+            text-decoration: none; color: #1d1d1f;
         }
 
-        .logo-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: 16px; color: white;
+        .logo-mark {
+            font-size: 18px; font-weight: 700; letter-spacing: -0.5px;
         }
 
-        .logo-text {
-            font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+        .nav-link {
+            font-size: 12px; color: #6e6e73;
+            text-decoration: none; font-weight: 500;
+            transition: color 0.2s;
         }
 
-        .logo-text span { color: var(--text-muted); font-weight: 400; }
-
-        .nav-badge {
-            font-size: 11px; padding: 4px 10px;
-            background: rgba(6, 182, 212, 0.1); color: var(--accent);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-            border-radius: 20px; font-weight: 500;
-        }
+        .nav-link:hover { color: #1d1d1f; }
 
         /* Hero */
         .hero {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            padding: 20px 20px 60px;
+            max-width: 680px; margin: 0 auto;
+            padding: 100px 24px 60px;
+            text-align: center;
         }
 
-        .hero-content {
-            max-width: 1100px; width: 100%;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
-            align-items: center;
-        }
-
-        .hero-left { max-width: 500px; }
-
-        .badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 6px 14px; border-radius: 20px;
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            font-size: 13px; color: var(--primary-light);
-            font-weight: 500; margin-bottom: 24px;
-        }
-
-        .badge-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: #22c55e; animation: pulse-dot 2s infinite;
-        }
-
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+        .overline {
+            font-size: 13px; font-weight: 500; color: #6e6e73;
+            letter-spacing: 0.02em; margin-bottom: 16px;
         }
 
         h1 {
-            font-size: 48px; font-weight: 800; line-height: 1.1;
-            letter-spacing: -1.5px; margin-bottom: 20px;
+            font-size: 52px; font-weight: 700; line-height: 1.05;
+            letter-spacing: -0.03em; margin-bottom: 20px;
+            color: #1d1d1f;
         }
 
-        h1 .gradient-text {
-            background: linear-gradient(135deg, var(--primary-light), var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .subtitle {
+            font-size: 19px; font-weight: 400; color: #6e6e73;
+            line-height: 1.5; max-width: 500px; margin: 0 auto 48px;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
         }
 
-        .hero-subtitle {
-            font-size: 17px; color: var(--text-secondary);
-            line-height: 1.7; margin-bottom: 36px;
-            font-family: 'Noto Sans Bengali', sans-serif;
-        }
-
-        /* CTA Button */
-        .cta-group { display: flex; flex-direction: column; gap: 14px; }
+        .cta-area { margin-bottom: 12px; }
 
         .connect-btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-            padding: 16px 32px; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 600; cursor: pointer;
-            background: linear-gradient(135deg, #1877f2, #0d65d9);
-            color: white; transition: all 0.3s ease;
-            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
-            position: relative; overflow: hidden;
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 28px;
+            background: #0071e3; color: white;
+            border: none; border-radius: 980px;
+            font-size: 15px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+            font-family: inherit;
+            text-decoration: none;
         }
 
-        .connect-btn::before {
-            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.5s ease;
+        .connect-btn:hover { background: #0077ed; }
+        .connect-btn:active { transform: scale(0.98); }
+        .connect-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+        .connect-btn svg {
+            width: 16px; height: 16px; fill: white; opacity: 0.9;
         }
 
-        .connect-btn:hover::before { left: 100%; }
-
-        .connect-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(24, 119, 242, 0.4);
+        .caption {
+            font-size: 12px; color: #86868b; margin-top: 12px;
         }
-
-        .connect-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-        .connect-btn svg { width: 20px; height: 20px; fill: white; }
-
-        .cta-note {
-            font-size: 13px; color: var(--text-muted);
-            display: flex; align-items: center; gap: 6px;
-        }
-
-        .cta-note svg { width: 14px; height: 14px; stroke: var(--text-muted); fill: none; }
-
-        /* Feature Cards - Right Side */
-        .features-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-        }
-
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px; padding: 24px;
-            transition: all 0.3s ease;
-        }
-
-        .feature-card:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            background: rgba(30, 41, 59, 0.8);
-            transform: translateY(-2px);
-        }
-
-        .feature-icon {
-            width: 40px; height: 40px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; margin-bottom: 14px;
-        }
-
-        .feature-icon.purple { background: rgba(99, 102, 241, 0.15); }
-        .feature-icon.cyan { background: rgba(6, 182, 212, 0.15); }
-        .feature-icon.green { background: rgba(34, 197, 94, 0.15); }
-        .feature-icon.orange { background: rgba(249, 115, 22, 0.15); }
-
-        .feature-card h3 {
-            font-size: 14px; font-weight: 600; margin-bottom: 6px;
-            color: var(--text-primary);
-        }
-
-        .feature-card p {
-            font-size: 13px; color: var(--text-muted); line-height: 1.5;
-            font-family: 'Noto Sans Bengali', sans-serif;
-        }
-
-        /* Stats bar */
-        .stats-bar {
-            display: flex; gap: 32px; margin-top: 40px;
-            padding-top: 24px; border-top: 1px solid var(--border);
-        }
-
-        .stat-item { text-align: center; }
-        .stat-value {
-            font-size: 24px; font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-light), var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
         /* Loading */
-        .loading { display: none; margin-top: 16px; }
-        .loading-bar {
-            height: 3px; background: var(--bg-card); border-radius: 3px; overflow: hidden;
-        }
-        .loading-bar-fill {
-            height: 100%; width: 30%; background: linear-gradient(90deg, var(--primary), var(--accent));
-            border-radius: 3px; animation: loading-slide 1.5s ease-in-out infinite;
-        }
-        @keyframes loading-slide {
-            0% { transform: translateX(-100%); } 100% { transform: translateX(400%); }
-        }
-        .loading-text {
-            font-size: 13px; color: var(--text-muted); margin-top: 8px; text-align: center;
-            font-family: 'Noto Sans Bengali', sans-serif;
+        .loading { display: none; margin-top: 24px; }
+
+        .loading-dots {
+            display: flex; gap: 6px; justify-content: center; margin-bottom: 8px;
         }
 
-        /* Mobile */
+        .loading-dots span {
+            width: 6px; height: 6px; border-radius: 50%; background: #86868b;
+            animation: dot-pulse 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes dot-pulse {
+            0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .loading-text { font-size: 13px; color: #86868b; }
+
+        /* Divider */
+        .divider {
+            max-width: 980px; margin: 0 auto;
+            border: none; border-top: 1px solid #e8e8ed;
+        }
+
+        /* Features */
+        .features {
+            max-width: 980px; margin: 0 auto;
+            padding: 80px 24px;
+        }
+
+        .features-header {
+            text-align: center; margin-bottom: 56px;
+        }
+
+        .features-header h2 {
+            font-size: 32px; font-weight: 600; letter-spacing: -0.02em;
+            color: #1d1d1f; margin-bottom: 8px;
+        }
+
+        .features-header p {
+            font-size: 15px; color: #6e6e73;
+        }
+
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature {
+            padding: 32px 28px;
+            background: #fff;
+            border-radius: 20px;
+            border: 1px solid #e8e8ed;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+
+        .feature:hover {
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            transform: translateY(-2px);
+        }
+
+        .feature-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.06em; color: #0071e3; margin-bottom: 12px;
+        }
+
+        .feature h3 {
+            font-size: 17px; font-weight: 600; color: #1d1d1f;
+            margin-bottom: 8px; letter-spacing: -0.01em;
+        }
+
+        .feature p {
+            font-size: 14px; color: #6e6e73; line-height: 1.5;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+
+        /* Trial */
+        .trial-section {
+            max-width: 980px; margin: 0 auto;
+            padding: 0 24px 80px;
+            text-align: center;
+        }
+
+        .trial-card {
+            background: #f5f5f7; border-radius: 20px;
+            padding: 48px;
+        }
+
+        .trial-card h2 {
+            font-size: 28px; font-weight: 600; letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .trial-card p {
+            font-size: 15px; color: #6e6e73; margin-bottom: 28px;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+
+        .trial-card .connect-btn { font-size: 14px; padding: 12px 24px; }
+
+        /* Footer */
+        footer {
+            max-width: 980px; margin: 0 auto;
+            padding: 20px 24px;
+            border-top: 1px solid #e8e8ed;
+            display: flex; justify-content: space-between;
+            font-size: 12px; color: #86868b;
+        }
+
         @media (max-width: 768px) {
-            nav { padding: 16px 20px; }
-            .hero { padding: 20px 20px 40px; }
-            .hero-content { grid-template-columns: 1fr; gap: 40px; }
-            .hero-left { max-width: 100%; }
-            h1 { font-size: 32px; }
-            .hero-subtitle { font-size: 15px; }
-            .features-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-            .feature-card { padding: 18px; }
-            .stats-bar { gap: 20px; flex-wrap: wrap; justify-content: center; }
+            h1 { font-size: 36px; }
+            .subtitle { font-size: 17px; }
+            .hero { padding: 60px 24px 40px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .features { padding: 48px 24px; }
+            footer { flex-direction: column; gap: 8px; text-align: center; }
         }
 
         @media (max-width: 480px) {
-            .features-grid { grid-template-columns: 1fr; }
-            h1 { font-size: 28px; }
+            h1 { font-size: 30px; }
         }
     </style>
 </head>
 <body>
-    <div class="bg-gradient"></div>
-    <div class="grid-bg"></div>
 
-    <div class="page-wrapper">
-        <nav>
-            <a href="/" class="logo">
-                <div class="logo-icon">Z</div>
-                <div class="logo-text">Zen Labs</div>
-            </a>
-            <div class="nav-badge">14 Days Free Trial</div>
-        </nav>
+    <nav>
+        <a href="/" class="logo">
+            <span class="logo-mark">Zen Labs</span>
+        </a>
+        <a href="/static/privacy.html" class="nav-link">Privacy</a>
+    </nav>
 
-        <section class="hero">
-            <div class="hero-content">
-                <div class="hero-left">
-                    <div class="badge">
-                        <div class="badge-dot"></div>
-                        AI-Powered Automation
-                    </div>
+    <section class="hero">
+        <p class="overline">AI Customer Service for Facebook</p>
 
-                    <h1>
-                        Turn Your Facebook Page Into a
-                        <span class="gradient-text">Smart Store</span>
-                    </h1>
+        <h1>Your page, always&nbsp;on.</h1>
 
-                    <p class="hero-subtitle">
-                        আপনার ফেসবুক পেজে AI কাস্টমার সার্ভিস যোগ করুন। Messenger এ ২৪/৭ অটো রিপ্লাই,
-                        অর্ডার কালেকশন, আর প্রোডাক্ট শো — সব অটোমেটিক।
-                    </p>
+        <p class="subtitle">
+            আপনার Facebook page এ AI assistant যোগ করুন।
+            Messenger এ অটো রিপ্লাই, অর্ডার নেওয়া, প্রোডাক্ট দেখানো — সব হবে নিজে নিজে।
+        </p>
 
-                    <div class="cta-group">
-                        <button class="connect-btn" id="connectBtn" onclick="connectFacebook()">
-                            <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                            Connect Facebook Page
-                        </button>
+        <div class="cta-area">
+            <button class="connect-btn" id="connectBtn" onclick="connectFacebook()">
+                <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                Connect your page
+            </button>
+        </div>
 
-                        <div class="cta-note">
-                            <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            Secure OAuth connection. No password needed.
-                        </div>
-                    </div>
+        <p class="caption">Secure OAuth. No password needed. Free 14-day trial.</p>
 
-                    <div class="loading" id="loading">
-                        <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-                        <div class="loading-text">Facebook এ কানেক্ট হচ্ছে...</div>
-                    </div>
-                </div>
+        <div class="loading" id="loading">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+            <div class="loading-text">Connecting to Facebook</div>
+        </div>
+    </section>
 
-                <div class="hero-right">
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon purple">&#128172;</div>
-                            <h3>Auto Reply</h3>
-                            <p>Messenger এ ২৪/৭ AI অটো রিপ্লাই। কাস্টমার কে wait করতে হবে না।</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon cyan">&#128230;</div>
-                            <h3>Order Collection</h3>
-                            <p>চ্যাটেই অর্ডার নিন — নাম, ফোন, এড্রেস, পেমেন্ট সব collect হবে।</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon green">&#128247;</div>
-                            <h3>Product Catalog</h3>
-                            <p>পেজের পোস্ট থেকে অটো প্রোডাক্ট sync। ছবিসহ কাস্টমারকে দেখান।</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon orange">&#128172;</div>
-                            <h3>Comment Reply</h3>
-                            <p>পোস্টে কমেন্ট করলে অটো DM। "দাম কত?" লিখলেই ইনবক্সে চলে আসবে।</p>
-                        </div>
-                    </div>
+    <hr class="divider">
 
-                    <div class="stats-bar">
-                        <div class="stat-item">
-                            <div class="stat-value">24/7</div>
-                            <div class="stat-label">Always Online</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">&lt;5s</div>
-                            <div class="stat-label">Reply Time</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">100%</div>
-                            <div class="stat-label">Auto Orders</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">0</div>
-                            <div class="stat-label">Setup Needed</div>
-                        </div>
-                    </div>
-                </div>
+    <section class="features">
+        <div class="features-header">
+            <h2>Everything runs automatically.</h2>
+            <p>Connect once. Your AI handles the rest.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature">
+                <div class="feature-label">Messaging</div>
+                <h3>Instant replies</h3>
+                <p>Messenger এ কাস্টমারদের প্রশ্নের উত্তর দেয় সাথে সাথে। ২৪ ঘণ্টা, ৭ দিন।</p>
             </div>
-        </section>
-    </div>
+            <div class="feature">
+                <div class="feature-label">Orders</div>
+                <h3>Collects orders</h3>
+                <p>চ্যাটেই নাম, ফোন, এড্রেস নিয়ে অর্ডার কমপ্লিট করে। আপনাকে notify করে।</p>
+            </div>
+            <div class="feature">
+                <div class="feature-label">Products</div>
+                <h3>Auto catalog</h3>
+                <p>পেজের পোস্ট থেকে প্রোডাক্ট নিজেই sync করে নেয়। আলাদা কিছু করতে হয় না।</p>
+            </div>
+            <div class="feature">
+                <div class="feature-label">Comments</div>
+                <h3>Comment to inbox</h3>
+                <p>পোস্টে কমেন্ট করলে কাস্টমারকে অটো DM যায়। Inbox এ conversation শুরু হয়।</p>
+            </div>
+            <div class="feature">
+                <div class="feature-label">Language</div>
+                <h3>Bangla + English</h3>
+                <p>Banglish বুঝে, proper Bangla আর English mix এ উত্তর দেয়। Professional দেখায়।</p>
+            </div>
+            <div class="feature">
+                <div class="feature-label">Setup</div>
+                <h3>One click</h3>
+                <p>একটা button click করলেই সব হয়ে যায়। কোনো coding বা technical knowledge লাগে না।</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="trial-section">
+        <div class="trial-card">
+            <h2>Start your free trial.</h2>
+            <p>১৪ দিন ফ্রি। কোনো credit card লাগবে না।</p>
+            <button class="connect-btn" onclick="connectFacebook()">
+                Get started
+            </button>
+        </div>
+    </section>
+
+    <footer>
+        <span>Zen Labs</span>
+        <span>Dhaka, Bangladesh</span>
+    </footer>
 
     <script>
         async function connectFacebook() {
@@ -365,19 +315,13 @@
             btn.disabled = true;
             loading.style.display = 'block';
             try {
-                const response = await fetch('/api/auth/facebook/login');
-                const data = await response.json();
-                if (data.auth_url) {
-                    window.location.href = data.auth_url;
-                } else {
-                    alert('Facebook login URL could not be generated. Please try again.');
-                    btn.disabled = false;
-                    loading.style.display = 'none';
-                }
-            } catch (error) {
+                const res = await fetch('/api/auth/facebook/login');
+                const data = await res.json();
+                if (data.auth_url) window.location.href = data.auth_url;
+                else { alert('Could not generate login URL.'); btn.disabled = false; loading.style.display = 'none'; }
+            } catch (e) {
                 alert('Connection failed. Please try again.');
-                btn.disabled = false;
-                loading.style.display = 'none';
+                btn.disabled = false; loading.style.display = 'none';
             }
         }
     </script>
