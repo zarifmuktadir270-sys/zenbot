@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Successfully Connected!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: #48bb78;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #1a202c;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .page-name {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #1a202c;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .next-steps {
+            background: #edf2f7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .next-steps h3 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .trial-note {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fef5e7;
+            border-radius: 10px;
+            color: #f39c12;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✓</div>
+
+        <h1>Successfully Connected!</h1>
+        <p class="subtitle">
+            Your Facebook page <span class="page-name" id="pageName">...</span> is now powered by AI customer service.
+        </p>
+
+        <div class="info-box">
+            <div class="info-item">
+                <span class="info-label">Page ID</span>
+                <span class="info-value" id="pageId">Loading...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Products Found</span>
+                <span class="info-value" id="productCount">Loading...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Trial Expires</span>
+                <span class="info-value" id="trialExpires">Loading...</span>
+            </div>
+        </div>
+
+        <div class="next-steps">
+            <h3>What happens now?</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-text">Your AI assistant is already active and replying to Messenger inquiries</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">Products are automatically synced from your page posts</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">Check your dashboard to see orders and conversations</div>
+            </div>
+        </div>
+
+        <a href="#" class="btn" id="dashboardBtn">Go to Dashboard</a>
+
+        <div class="trial-note">
+            🎉 Your 14-day free trial has started! No credit card required.
+        </div>
+    </div>
+
+    <script>
+        // Get data from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sellerId = urlParams.get('seller_id');
+        const pageName = urlParams.get('page_name');
+        const productCount = urlParams.get('products');
+        const trialExpires = urlParams.get('trial_expires');
+
+        // Update page with data
+        if (pageName) {
+            document.getElementById('pageName').textContent = pageName;
+        }
+        if (urlParams.get('page_id')) {
+            document.getElementById('pageId').textContent = urlParams.get('page_id');
+        }
+        if (productCount) {
+            document.getElementById('productCount').textContent = productCount + ' products';
+        }
+        if (trialExpires) {
+            const date = new Date(trialExpires);
+            document.getElementById('trialExpires').textContent = date.toLocaleDateString();
+        }
+
+        // Set dashboard link
+        if (sellerId) {
+            document.getElementById('dashboardBtn').href = `/api/seller/${sellerId}/dashboard`;
+        }
+    </script>
+</body>
+</html>
