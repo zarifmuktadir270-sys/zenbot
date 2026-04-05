@@ -81,8 +81,12 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
 
         # Handle comments on posts (feed webhook)
         for change in entry.get("changes", []):
+            print(f"[WEBHOOK CHANGE] field={change.get('field')} value={str(change.get('value', {}))[:200]}")
             if change.get("field") == "feed" and change.get("value", {}).get("item") == "comment":
                 value = change["value"]
+                # Only process new comments
+                if value.get("verb") not in ("add", None):
+                    continue
                 # Skip if it's the page's own comment
                 if value.get("from", {}).get("id") == page_id:
                     continue

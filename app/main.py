@@ -85,25 +85,41 @@ async def health():
 
 @app.get("/debug")
 async def debug():
-    """Temporary debug endpoint to check database state."""
+    """Debug endpoint to check database state and webhook subscription."""
     from app.models.models import Seller
+    import httpx
+
     db = SessionLocal()
     try:
         sellers = db.query(Seller).all()
-        return {
-            "sellers": [
-                {
-                    "id": s.id[:8],
-                    "page_id": s.fb_page_id,
-                    "page_name": s.fb_page_name,
-                    "has_token": bool(s.fb_page_access_token),
-                    "has_admin_id": bool(getattr(s, 'admin_fb_user_id', None)),
-                    "is_active": s.is_active,
-                }
-                for s in sellers
-            ],
-            "total": len(sellers),
-        }
+        seller_data = []
+        for s in sellers:
+            info = {
+                "id": s.id[:8],
+                "page_id": s.fb_page_id,
+                "page_name": s.fb_page_name,
+                "has_token": bool(s.fb_page_access_token),
+                "has_admin_id": bool(getattr(s, 'admin_fb_user_id', None)),
+                "is_active": s.is_active,
+            }
+            # Check webhook subscription
+            if s.fb_page_access_token:
+                try:
+                    async with httpx.AsyncClient() as client:
+                        resp = await client.get(
+                            f"https://graph.facebook.com/v21.0/{s.fb_page_id}/subscribed_apps",
+                            params={"access_token": s.fb_page_access_token}
+                        )
+                        sub_data = resp.json()
+                        if sub_data.get("data"):
+                            info["subscribed_fields"] = sub_data["data"][0].get("subscribed_fields", [])
+                        else:
+                            info["subscribed_fields"] = sub_data
+                except Exception as e:
+                    info["subscription_error"] = str(e)
+            seller_data.append(info)
+
+        return {"sellers": seller_data, "total": len(sellers)}
     finally:
         db.close()
 

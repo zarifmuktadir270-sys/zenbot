@@ -70,19 +70,32 @@ async def send_product_cards(recipient_id: str, products: list, page_access_toke
 
 async def send_private_reply(comment_id: str, message_text: str, page_access_token: str):
     """Send a private reply (DM) to someone who commented on a post."""
-    url = f"{GRAPH_API_BASE}/{comment_id}/private_replies"
+    # Method 1: Messenger Platform private reply via /me/messages
+    url = f"{GRAPH_API_BASE}/me/messages"
     params = {"access_token": page_access_token}
     payload = {
-        "message": message_text,
+        "recipient": {"comment_id": comment_id},
+        "message": {"text": message_text},
+        "messaging_type": "RESPONSE",
     }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, params=params, json=payload)
-        if response.status_code != 200:
-            print(f"Private reply failed: {response.status_code} {response.text}")
-        else:
+        if response.status_code == 200:
             print(f"Private reply sent for comment {comment_id}")
-        return response.json()
+            return response.json()
+
+        print(f"Private reply method 1 failed: {response.status_code} {response.text}")
+
+        # Method 2: Direct private_replies endpoint
+        url2 = f"{GRAPH_API_BASE}/{comment_id}/private_replies"
+        response2 = await client.post(url2, params=params, json={"message": message_text})
+        if response2.status_code == 200:
+            print(f"Private reply (method 2) sent for comment {comment_id}")
+            return response2.json()
+
+        print(f"Private reply method 2 failed: {response2.status_code} {response2.text}")
+        return {"error": "both methods failed"}
 
 
 async def send_typing_indicator(recipient_id: str, page_access_token: str, action: str = "typing_on"):
