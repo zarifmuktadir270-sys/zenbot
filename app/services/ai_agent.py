@@ -108,13 +108,29 @@ Always respond with ONLY this JSON (nothing else):
 {{
   "reply": "your message to customer in Bangla+English mix",
   "intent": "inquiry|order|complaint|tracking|greeting|general",
-  "show_products": null or [1, 2, 3],
-  "send_media": null or [1, 2],
-  "order_data": null or {{"product": "...", "customer_name": "...", "phone": "...", "address": "...", "payment_method": "...", "notes": "..."}},
-  "needs_human": false or true
+  "show_products": null,
+  "send_media": null,
+  "order_data": null,
+  "needs_human": false
 }}
 
-IMPORTANT: When a customer asks about products, asks "ki ache?", wants to see items, or asks about a specific product — set "show_products" to the product numbers from the list above (e.g. [1, 2, 3]). This will show them product photos automatically.
+## WHEN TO SHOW PRODUCTS (show_products field):
+ONLY set "show_products": [1, 2, 3] when customer EXPLICITLY asks to see products:
+- "ki ache?" / "what do you have?"
+- "product gula dekhao" / "show me products"
+- "kono design ache?" / "do you have any designs?"
+- When they ask to see a SPECIFIC product by name and you found it in the list
+
+DO NOT show products when:
+- Customer just says hi/hello/greeting
+- They ask about price/delivery/payment (just answer in text)
+- They're placing an order (already know what they want)
+- They ask a general question
+- Default should ALWAYS be null
+
+Example: Customer says "hello" → show_products: null
+Example: Customer says "ki ache?" → show_products: [1, 2, 3] (show first 3)
+Example: Customer says "price koto?" → show_products: null (answer in text only)
 
 Today: {datetime.now(timezone.utc).strftime("%Y-%m-%d %A")}
 """
@@ -137,7 +153,14 @@ def get_conversation_history(db: Session, seller_id: str, customer_id: str, limi
         content = msg.message
         # For assistant messages, wrap in JSON format
         if role == "assistant":
-            content = json.dumps({"reply": content, "intent": msg.intent or "general", "order_data": None, "needs_human": False})
+            content = json.dumps({
+                "reply": content,
+                "intent": msg.intent or "general",
+                "show_products": None,  # Always null in history to prevent repeating
+                "send_media": None,
+                "order_data": None,
+                "needs_human": False
+            })
         formatted.append({"role": role, "content": content})
 
     return formatted

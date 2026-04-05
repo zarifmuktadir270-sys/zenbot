@@ -189,7 +189,7 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
 
     # Send product cards with images if AI requested
     show_products = result.get("show_products")
-    if show_products:
+    if show_products and isinstance(show_products, list) and len(show_products) > 0:
         products = db.query(Product).filter(
             Product.seller_id == seller.id,
             Product.is_available == True,
@@ -208,7 +208,7 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
 
     # Send media if AI requested
     send_media_ids = result.get("send_media")
-    if send_media_ids:
+    if send_media_ids and isinstance(send_media_ids, list) and len(send_media_ids) > 0:
         media_list = db.query(Media).filter(
             Media.seller_id == seller.id,
         ).all()
