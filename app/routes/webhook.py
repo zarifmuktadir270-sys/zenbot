@@ -61,7 +61,7 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
 
         for event in entry.get("messaging", []):
             message = event.get("message")
-            if not message or not message.get("text"):
+            if not message:
                 continue
             if message.get("is_echo"):
                 continue
@@ -76,8 +76,13 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
                 db.commit()
 
             sender_id = event["sender"]["id"]
-            message_text = message["text"]
 
+            # Handle voice messages, images, videos, stickers
+            if not message.get("text"):
+                await handle_non_text_message(db, page_id, sender_id, message)
+                continue
+
+            message_text = message["text"]
             await handle_customer_message(db, page_id, sender_id, message_text)
 
         # Handle comments on posts (feed webhook)
@@ -145,6 +150,41 @@ async def handle_comment(db: Session, page_id: str, value: dict):
         await send_private_reply(comment_id, dm_text, seller.fb_page_access_token)
     except Exception as e:
         print(f"Comment auto-DM failed: {e}")
+
+
+async def handle_non_text_message(db: Session, page_id: str, sender_id: str, message: dict):
+    """Handle voice messages, images, videos, stickers, etc."""
+
+    seller = db.query(Seller).filter(Seller.fb_page_id == page_id).first()
+    if not seller:
+        return
+
+    # Detect message type
+    attachments = message.get("attachments", [])
+    if not attachments:
+        return
+
+    msg_type = attachments[0].get("type", "media")
+
+    # Send appropriate response based on type
+    if msg_type == "audio":
+        reply = (
+            "দুঃখিত, আমি এখনো voice message শুনতে পারি না। 🎤\n"
+            "Please আপনার message টা text এ লিখে পাঠান। ধন্যবাদ!"
+        )
+    elif msg_type == "image":
+        reply = (
+            "Photo পেয়েছি! 📸\n"
+            "কোন product সম্পর্কে জানতে চান? আমাকে লিখে জানান।"
+        )
+    elif msg_type == "video":
+        reply = "Video পেয়েছি! 🎥 আপনার question টা text এ লিখে পাঠান please।"
+    elif msg_type == "file":
+        reply = "File পেয়েছি! 📄 কিভাবে সাহায্য করতে পারি?"
+    else:
+        reply = "আমি শুধু text message reply করতে পারি। 💬 Please লিখে পাঠান।"
+
+    await send_message(sender_id, reply, seller.fb_page_access_token)
 
 
 async def handle_customer_message(db: Session, page_id: str, sender_id: str, message_text: str):
