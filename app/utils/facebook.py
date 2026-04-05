@@ -70,18 +70,18 @@ async def send_product_cards(recipient_id: str, products: list, page_access_toke
 
 async def send_private_reply(comment_id: str, message_text: str, page_access_token: str):
     """Send a private reply (DM) to someone who commented on a post."""
-    url = f"{GRAPH_API_BASE}/me/messages"
+    url = f"{GRAPH_API_BASE}/{comment_id}/private_replies"
     params = {"access_token": page_access_token}
     payload = {
-        "recipient": {"comment_id": comment_id},
-        "message": {"text": message_text},
-        "messaging_type": "RESPONSE",
+        "message": message_text,
     }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, params=params, json=payload)
         if response.status_code != 200:
             print(f"Private reply failed: {response.status_code} {response.text}")
+        else:
+            print(f"Private reply sent for comment {comment_id}")
         return response.json()
 
 
