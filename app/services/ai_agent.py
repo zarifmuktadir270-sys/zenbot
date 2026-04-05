@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models.models import Seller, Product, Customer, Conversation, Order
+from app.models.models import Seller, Product, Customer, Conversation, Order, Media
 
 KILO_BASE_URL = "https://api.kilo.ai/api/gateway"
 KILO_MODELS = [
@@ -19,10 +19,12 @@ KILO_MODELS = [
 ]
 
 
-def build_system_prompt(seller: Seller, products: List[Product]) -> str:
+def build_system_prompt(seller: Seller, products: List[Product], media_list: List[Media] = None) -> str:
     """Build the AI system prompt with seller's shop info and products."""
 
-    # Format product catalog from scraped Facebook posts
+    bot_name = getattr(seller, "bot_name", "") or "AI Assistant"
+
+    # Format product catalog
     product_list = ""
     for i, p in enumerate(products):
         if p.is_available:
@@ -38,7 +40,24 @@ def build_system_prompt(seller: Seller, products: List[Product]) -> str:
     if not product_list:
         product_list = "No products loaded yet."
 
-    return f"""You are the AI customer service assistant for "{seller.fb_page_name}" Facebook shop. You chat with customers on Messenger.
+    # Format media
+    media_section = ""
+    if media_list:
+        media_section = "\n## MEDIA FILES (you can send these):\n"
+        for i, m in enumerate(media_list):
+            media_section += f"- [M{i+1}] {m.name} ({m.media_type}) | tags: {m.tags}\n"
+        media_section += "\nTo send media, include \"send_media\": [1, 2] in your response.\n"
+
+    # Custom instructions & learned knowledge
+    custom_section = ""
+    custom_inst = getattr(seller, "custom_instructions", "") or ""
+    learned = getattr(seller, "learned_knowledge", "") or ""
+    if custom_inst:
+        custom_section += f"\n## OWNER'S INSTRUCTIONS (follow these strictly):\n{custom_inst}\n"
+    if learned:
+        custom_section += f"\n## LEARNED KNOWLEDGE (owner taught you these):\n{learned}\n"
+
+    return f"""You are "{bot_name}", the AI customer service assistant for "{seller.fb_page_name}" Facebook shop. You chat with customers on Messenger.
 
 ## LANGUAGE STYLE (VERY IMPORTANT):
 - Write in natural Bangladeshi style: Bangla sentences with English terms mixed in naturally
@@ -73,13 +92,14 @@ def build_system_prompt(seller: Seller, products: List[Product]) -> str:
 
 ## PRODUCTS:
 {product_list}
-
+{media_section}{custom_section}
 ## RESPONSE FORMAT:
 Always respond with ONLY this JSON (nothing else):
 {{
   "reply": "your message to customer in Bangla+English mix",
   "intent": "inquiry|order|complaint|tracking|greeting|general",
   "show_products": null or [1, 2, 3],
+  "send_media": null or [1, 2],
   "order_data": null or {{"product": "...", "customer_name": "...", "phone": "...", "address": "...", "payment_method": "...", "notes": "..."}},
   "needs_human": false or true
 }}
@@ -119,11 +139,12 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
     Returns: {"reply": str, "intent": str, "order_data": dict|None, "needs_human": bool}
     """
 
-    # Load seller's products
+    # Load seller's products and media
     products = db.query(Product).filter(Product.seller_id == seller.id).all()
+    media_list = db.query(Media).filter(Media.seller_id == seller.id).all()
 
     # Build system prompt
-    system_prompt = build_system_prompt(seller, products)
+    system_prompt = build_system_prompt(seller, products, media_list)
 
     # Get conversation history
     history = get_conversation_history(db, seller.id, customer.id)

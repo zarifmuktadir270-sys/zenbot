@@ -24,9 +24,15 @@ try:
     inspector = inspect(engine)
     seller_columns = [c['name'] for c in inspector.get_columns('sellers')]
     with engine.connect() as conn:
-        if 'admin_fb_user_id' not in seller_columns:
-            conn.execute(text("ALTER TABLE sellers ADD COLUMN admin_fb_user_id VARCHAR"))
-            conn.commit()
+        for col_name, col_type in [
+            ('admin_fb_user_id', 'VARCHAR'),
+            ('bot_name', 'VARCHAR'),
+            ('custom_instructions', 'TEXT'),
+            ('learned_knowledge', 'TEXT'),
+        ]:
+            if col_name not in seller_columns:
+                conn.execute(text(f"ALTER TABLE sellers ADD COLUMN {col_name} {col_type}"))
+        conn.commit()
 except Exception as e:
     print(f"Migration note: {e}")
 
@@ -76,6 +82,14 @@ async def onboard():
     if os.path.exists(onboard_file):
         return FileResponse(onboard_file)
     return {"error": "Onboarding page not found"}
+
+
+@app.get("/dashboard")
+async def dashboard():
+    dash_file = os.path.join(os.path.dirname(__file__), "static", "dashboard.html")
+    if os.path.exists(dash_file):
+        return FileResponse(dash_file)
+    return {"error": "Dashboard not found"}
 
 
 @app.get("/health")

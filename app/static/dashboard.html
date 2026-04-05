@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Zen Labs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600&display=swap');
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f5f5f7; color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top bar */
+        .topbar {
+            background: #fbfbfd; border-bottom: 1px solid #e8e8ed;
+            padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .logo { font-size: 17px; font-weight: 700; color: #1d1d1f; text-decoration: none; letter-spacing: -0.5px; }
+        .shop-name { font-size: 13px; color: #86868b; font-weight: 500; }
+        .topbar-right { display: flex; gap: 8px; }
+        .btn-small {
+            padding: 6px 14px; border-radius: 980px; font-size: 12px; font-weight: 500;
+            border: 1px solid #e8e8ed; background: #fff; color: #1d1d1f;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .btn-small:hover { background: #f5f5f7; }
+
+        /* Layout */
+        .layout { max-width: 1080px; margin: 0 auto; padding: 32px 24px; }
+
+        /* Tabs */
+        .tabs {
+            display: flex; gap: 4px; margin-bottom: 32px;
+            background: #e8e8ed; border-radius: 10px; padding: 3px; width: fit-content;
+        }
+        .tab {
+            padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+            cursor: pointer; color: #6e6e73; transition: all 0.15s; border: none; background: none;
+        }
+        .tab.active { background: #fff; color: #1d1d1f; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+        /* Panels */
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Cards */
+        .card {
+            background: #fff; border-radius: 14px; border: 1px solid #e8e8ed;
+            padding: 24px; margin-bottom: 16px;
+        }
+        .card-title { font-size: 13px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 16px; }
+
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+        .stat-card { background: #fff; border-radius: 14px; border: 1px solid #e8e8ed; padding: 20px; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.02em; }
+        .stat-label { font-size: 12px; color: #86868b; margin-top: 2px; }
+
+        /* Form */
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 13px; font-weight: 500; color: #6e6e73; margin-bottom: 6px; }
+        .field input, .field textarea, .field select {
+            width: 100%; padding: 10px 14px; border: 1px solid #e8e8ed; border-radius: 10px;
+            font-size: 14px; font-family: inherit; color: #1d1d1f; background: #fbfbfd;
+            outline: none; transition: border-color 0.15s;
+        }
+        .field input:focus, .field textarea:focus { border-color: #0071e3; }
+        .field textarea { resize: vertical; min-height: 80px; }
+        .field-hint { font-size: 12px; color: #86868b; margin-top: 4px; }
+
+        .btn {
+            padding: 10px 20px; border-radius: 980px; font-size: 14px; font-weight: 500;
+            border: none; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-primary { background: #0071e3; color: white; }
+        .btn-primary:hover { background: #0077ed; }
+        .btn-danger { background: #fff; color: #ff3b30; border: 1px solid #ffd4d1; }
+        .btn-danger:hover { background: #fff5f5; }
+        .btn-secondary { background: #f5f5f7; color: #1d1d1f; border: 1px solid #e8e8ed; }
+        .btn-secondary:hover { background: #e8e8ed; }
+        .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 8px 12px; color: #86868b; font-weight: 500; border-bottom: 1px solid #e8e8ed; }
+        td { padding: 10px 12px; border-bottom: 1px solid #f0f0f2; color: #1d1d1f; }
+        tr:hover td { background: #fbfbfd; }
+
+        .badge-status {
+            display: inline-block; padding: 3px 10px; border-radius: 980px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-confirmed { background: #d4edda; color: #155724; }
+        .badge-shipped { background: #cce5ff; color: #004085; }
+
+        /* Product/Media grid */
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+        .item-card {
+            background: #fbfbfd; border: 1px solid #e8e8ed; border-radius: 12px;
+            padding: 16px; position: relative;
+        }
+        .item-card img {
+            width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;
+            background: #e8e8ed;
+        }
+        .item-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .item-detail { font-size: 12px; color: #86868b; }
+        .item-actions { display: flex; gap: 6px; margin-top: 8px; }
+        .item-actions button { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #e8e8ed; background: #fff; cursor: pointer; }
+        .item-actions button:hover { background: #f5f5f7; }
+        .item-actions .del { color: #ff3b30; border-color: #ffd4d1; }
+
+        /* Knowledge */
+        .knowledge-entry {
+            padding: 10px 14px; background: #fbfbfd; border: 1px solid #e8e8ed;
+            border-radius: 8px; margin-bottom: 8px; font-size: 14px;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+            background: #1d1d1f; color: white; border-radius: 10px;
+            font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s;
+            z-index: 100;
+        }
+        .toast.show { opacity: 1; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); z-index: 50; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #fff; border-radius: 16px; padding: 28px; max-width: 440px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .modal h3 { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+
+        @media (max-width: 768px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .item-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="/" class="logo">Zen Labs</a>
+        <span class="shop-name" id="shopName"></span>
+    </div>
+    <div class="topbar-right">
+        <button class="btn-small" onclick="refreshProducts()">Sync Products</button>
+        <a href="/" class="btn-small">Home</a>
+    </div>
+</div>
+
+<div class="layout">
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('overview')">Overview</button>
+        <button class="tab" onclick="switchTab('bot')">Bot Settings</button>
+        <button class="tab" onclick="switchTab('products')">Products</button>
+        <button class="tab" onclick="switchTab('media')">Media</button>
+        <button class="tab" onclick="switchTab('knowledge')">Knowledge</button>
+        <button class="tab" onclick="switchTab('orders')">Orders</button>
+    </div>
+
+    <!-- Overview -->
+    <div class="panel active" id="panel-overview">
+        <div class="stats">
+            <div class="stat-card"><div class="stat-value" id="stat-customers">—</div><div class="stat-label">Customers</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-orders">—</div><div class="stat-label">Total Orders</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-pending">—</div><div class="stat-label">Pending</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-messages">—</div><div class="stat-label">Today's Messages</div></div>
+        </div>
+    </div>
+
+    <!-- Bot Settings -->
+    <div class="panel" id="panel-bot">
+        <div class="card">
+            <div class="card-title">Bot Identity</div>
+            <div class="field">
+                <label>Bot Name</label>
+                <input type="text" id="botName" placeholder="AI Assistant">
+                <div class="field-hint">This is how the bot introduces itself.</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">Shop Information</div>
+            <div class="field"><label>Delivery Info</label><input type="text" id="deliveryInfo"></div>
+            <div class="field"><label>Payment Methods</label><input type="text" id="paymentMethods"></div>
+            <div class="field"><label>Delivery Time</label><input type="text" id="deliveryTime"></div>
+            <div class="field"><label>Return Policy</label><input type="text" id="returnPolicy"></div>
+        </div>
+        <div class="card">
+            <div class="card-title">Custom Instructions</div>
+            <div class="field">
+                <textarea id="customInstructions" rows="5" placeholder="Write rules for the bot to follow. For example: 'Always mention free delivery over 2000 BDT' or 'Never discuss competitor products'"></textarea>
+                <div class="field-hint">The bot will follow these rules in every conversation.</div>
+            </div>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+        </div>
+    </div>
+
+    <!-- Products -->
+    <div class="panel" id="panel-products">
+        <div class="btn-row" style="margin-bottom:16px">
+            <button class="btn btn-primary" onclick="showAddProduct()">Add Product</button>
+            <button class="btn btn-secondary" onclick="refreshProducts()">Sync from Facebook</button>
+        </div>
+        <div class="item-grid" id="productGrid"></div>
+    </div>
+
+    <!-- Media -->
+    <div class="panel" id="panel-media">
+        <div class="card">
+            <div class="card-title">Upload Media</div>
+            <p style="font-size:13px;color:#86868b;margin-bottom:12px">Add image/video URLs that the bot can send to customers. Use any image hosting service (imgur, postimg, Facebook CDN, etc).</p>
+            <div class="field"><label>Name</label><input type="text" id="mediaName" placeholder="Product photo, Size chart, etc"></div>
+            <div class="field"><label>URL</label><input type="text" id="mediaUrl" placeholder="https://i.imgur.com/..."></div>
+            <div class="field"><label>Tags (comma-separated)</label><input type="text" id="mediaTags" placeholder="size chart, measurement, sizing"></div>
+            <div class="field">
+                <label>Type</label>
+                <select id="mediaType"><option value="image">Image</option><option value="video">Video</option></select>
+            </div>
+            <button class="btn btn-primary" onclick="addMedia()">Add Media</button>
+        </div>
+        <div class="item-grid" id="mediaGrid" style="margin-top:16px"></div>
+    </div>
+
+    <!-- Knowledge -->
+    <div class="panel" id="panel-knowledge">
+        <div class="card">
+            <div class="card-title">Teach the Bot</div>
+            <p style="font-size:13px;color:#86868b;margin-bottom:12px">
+                Add facts the bot should know. For example: "Red dress is currently out of stock" or "Eid discount is 15% on all items".
+            </p>
+            <div class="field">
+                <textarea id="newKnowledge" rows="3" placeholder="Write something the bot should remember..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="addKnowledge()">Teach</button>
+        </div>
+        <div class="card" style="margin-top:16px">
+            <div class="card-title">What the bot knows</div>
+            <div id="knowledgeList"></div>
+            <div class="btn-row"><button class="btn btn-danger" onclick="clearKnowledge()">Clear All</button></div>
+        </div>
+    </div>
+
+    <!-- Orders -->
+    <div class="panel" id="panel-orders">
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Order</th><th>Customer</th><th>Phone</th><th>Items</th><th>Payment</th><th>Status</th></tr></thead>
+                    <tbody id="orderTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal-overlay" id="addProductModal">
+    <div class="modal">
+        <h3>Add Product</h3>
+        <div class="field"><label>Name</label><input type="text" id="prodName"></div>
+        <div class="field"><label>Price (BDT)</label><input type="number" id="prodPrice"></div>
+        <div class="field"><label>Description</label><textarea id="prodDesc" rows="2"></textarea></div>
+        <div class="field"><label>Image URL</label><input type="text" id="prodImage"></div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="addProduct()">Add</button>
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const SELLER_ID = params.get('seller_id') || '';
+const API = '/api/seller/' + SELLER_ID;
+
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', t.textContent.toLowerCase().includes(name.slice(0,4))));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+}
+
+// Overview
+async function loadDashboard() {
+    const res = await fetch(API + '/dashboard');
+    const data = await res.json();
+    document.getElementById('shopName').textContent = data.shop_name;
+    document.getElementById('stat-customers').textContent = data.stats.total_customers;
+    document.getElementById('stat-orders').textContent = data.stats.total_orders;
+    document.getElementById('stat-pending').textContent = data.stats.pending_orders;
+    document.getElementById('stat-messages').textContent = data.stats.today_messages;
+}
+
+// Settings
+async function loadSettings() {
+    const res = await fetch(API + '/settings');
+    const d = await res.json();
+    document.getElementById('shopName').textContent = d.fb_page_name;
+    document.getElementById('botName').value = d.bot_name || '';
+    document.getElementById('deliveryInfo').value = d.delivery_info || '';
+    document.getElementById('paymentMethods').value = d.payment_methods || '';
+    document.getElementById('deliveryTime').value = d.delivery_time || '';
+    document.getElementById('returnPolicy').value = d.return_policy || '';
+    document.getElementById('customInstructions').value = d.custom_instructions || '';
+    // Knowledge
+    const kl = document.getElementById('knowledgeList');
+    kl.innerHTML = '';
+    if (d.learned_knowledge) {
+        d.learned_knowledge.split('\n').filter(Boolean).forEach(k => {
+            kl.innerHTML += '<div class="knowledge-entry">' + k + '</div>';
+        });
+    } else {
+        kl.innerHTML = '<p style="font-size:13px;color:#86868b">No knowledge added yet.</p>';
+    }
+}
+
+async function saveSettings() {
+    await fetch(API + '/settings', {
+        method: 'PUT', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            bot_name: document.getElementById('botName').value,
+            delivery_info: document.getElementById('deliveryInfo').value,
+            payment_methods: document.getElementById('paymentMethods').value,
+            delivery_time: document.getElementById('deliveryTime').value,
+            return_policy: document.getElementById('returnPolicy').value,
+            custom_instructions: document.getElementById('customInstructions').value,
+        })
+    });
+    toast('Settings saved');
+}
+
+// Products
+async function loadProducts() {
+    const res = await fetch(API + '/products');
+    const products = await res.json();
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = products.map(p => `
+        <div class="item-card">
+            ${p.image_url ? '<img src="'+p.image_url+'" alt="">' : ''}
+            <div class="item-name">${p.name}</div>
+            <div class="item-detail">${p.price_text || (p.price ? p.price + ' BDT' : 'No price')}</div>
+            <div class="item-detail">${p.is_available ? 'Available' : 'Unavailable'}</div>
+            <div class="item-actions">
+                <button onclick="toggleProduct('${p.id}', ${!p.is_available})">${p.is_available ? 'Hide' : 'Show'}</button>
+                <button class="del" onclick="deleteProduct('${p.id}')">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showAddProduct() { document.getElementById('addProductModal').classList.add('show'); }
+function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show')); }
+
+async function addProduct() {
+    await fetch(API + '/products', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('prodName').value,
+            price: parseFloat(document.getElementById('prodPrice').value) || null,
+            description: document.getElementById('prodDesc').value,
+            image_url: document.getElementById('prodImage').value,
+        })
+    });
+    closeModal(); loadProducts(); toast('Product added');
+}
+
+async function toggleProduct(id, available) {
+    await fetch(API + '/products/' + id, {
+        method: 'PUT', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ is_available: available })
+    });
+    loadProducts();
+}
+
+async function deleteProduct(id) {
+    if (!confirm('Delete this product?')) return;
+    await fetch(API + '/products/' + id, { method: 'DELETE' });
+    loadProducts(); toast('Product deleted');
+}
+
+async function refreshProducts() {
+    toast('Syncing products from Facebook...');
+    const res = await fetch(API + '/refresh-products', { method: 'POST' });
+    const d = await res.json();
+    loadProducts(); toast(d.message);
+}
+
+// Media
+async function loadMedia() {
+    const res = await fetch(API + '/media');
+    const media = await res.json();
+    const grid = document.getElementById('mediaGrid');
+    grid.innerHTML = media.map(m => `
+        <div class="item-card">
+            ${m.media_type === 'image' ? '<img src="'+m.url+'" alt="">' : ''}
+            <div class="item-name">${m.name}</div>
+            <div class="item-detail">${m.tags || 'No tags'}</div>
+            <div class="item-actions">
+                <button class="del" onclick="deleteMedia('${m.id}')">Delete</button>
+            </div>
+        </div>
+    `).join('') || '<p style="font-size:13px;color:#86868b">No media added yet.</p>';
+}
+
+async function addMedia() {
+    const name = document.getElementById('mediaName').value;
+    const url = document.getElementById('mediaUrl').value;
+    if (!name || !url) return toast('Name and URL required');
+    await fetch(API + '/media', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name, url,
+            media_type: document.getElementById('mediaType').value,
+            tags: document.getElementById('mediaTags').value,
+        })
+    });
+    document.getElementById('mediaName').value = '';
+    document.getElementById('mediaUrl').value = '';
+    document.getElementById('mediaTags').value = '';
+    loadMedia(); toast('Media added');
+}
+
+async function deleteMedia(id) {
+    if (!confirm('Delete?')) return;
+    await fetch(API + '/media/' + id, { method: 'DELETE' });
+    loadMedia(); toast('Deleted');
+}
+
+// Knowledge
+async function addKnowledge() {
+    const text = document.getElementById('newKnowledge').value.trim();
+    if (!text) return;
+    await fetch(API + '/learn', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ knowledge: text })
+    });
+    document.getElementById('newKnowledge').value = '';
+    loadSettings(); toast('Knowledge saved');
+}
+
+async function clearKnowledge() {
+    if (!confirm('Clear all learned knowledge?')) return;
+    await fetch(API + '/learn', { method: 'DELETE' });
+    loadSettings(); toast('Knowledge cleared');
+}
+
+// Orders
+async function loadOrders() {
+    const res = await fetch(API + '/orders');
+    const orders = await res.json();
+    const tbody = document.getElementById('orderTable');
+    tbody.innerHTML = orders.map(o => `
+        <tr>
+            <td>${o.id.slice(0,8)}</td>
+            <td>${o.customer_name || '—'}</td>
+            <td>${o.customer_phone || '—'}</td>
+            <td>${(o.items||[]).map(i => i.product_name).join(', ')}</td>
+            <td>${o.payment_method || '—'}</td>
+            <td>
+                <select onchange="updateOrder('${o.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e8e8ed">
+                    ${['pending','confirmed','shipped','delivered','cancelled'].map(s =>
+                        '<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+s+'</option>'
+                    ).join('')}
+                </select>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:#86868b">No orders yet</td></tr>';
+}
+
+async function updateOrder(id, status) {
+    await fetch(API + '/orders/' + id + '/status?status=' + status, { method: 'PUT' });
+    toast('Order updated to ' + status);
+}
+
+// Init
+if (SELLER_ID) {
+    loadDashboard(); loadSettings(); loadProducts(); loadMedia(); loadOrders();
+} else {
+    document.querySelector('.layout').innerHTML = '<div class="card" style="text-align:center;padding:48px"><h2 style="margin-bottom:8px">No seller ID</h2><p style="color:#86868b">Access this page from the success page after connecting your Facebook page.</p></div>';
+}
+</script>
+</body>
+</html>

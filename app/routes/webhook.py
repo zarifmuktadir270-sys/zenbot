@@ -9,13 +9,14 @@ from datetime import datetime, timezone
 
 from app.config import settings
 from app.models.database import get_db, Base, engine
-from app.models.models import Seller, Customer, Product
+from app.models.models import Seller, Customer, Product, Media
 from app.services.ai_agent import get_ai_response
 from app.utils.facebook import (
     send_message,
     send_typing_indicator,
     send_product_cards,
     send_private_reply,
+    send_media_message,
     get_user_profile,
     verify_webhook_signature,
 )
@@ -81,15 +82,18 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
 
         # Handle comments on posts (feed webhook)
         for change in entry.get("changes", []):
-            print(f"[WEBHOOK CHANGE] field={change.get('field')} value={str(change.get('value', {}))[:200]}")
-            if change.get("field") == "feed" and change.get("value", {}).get("item") == "comment":
-                value = change["value"]
-                # Only process new comments
-                if value.get("verb") not in ("add", None):
-                    continue
-                # Skip if it's the page's own comment
-                if value.get("from", {}).get("id") == page_id:
-                    continue
+            if change.get("field") != "feed":
+                continue
+            value = change.get("value", {})
+            if value.get("item") != "comment" or value.get("verb") != "add":
+                continue
+            # Skip page's own comments and replies created by the app
+            commenter_id = value.get("from", {}).get("id", "")
+            if commenter_id == page_id:
+                continue
+            # Skip replies to comments (only respond to top-level)
+            if value.get("parent_id"):
+                continue
                 comment_id = value.get("comment_id")
                 if comment_id:
                     # Dedup comments too
@@ -201,6 +205,17 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
                 })
         if cards:
             await send_product_cards(sender_id, cards, seller.fb_page_access_token)
+
+    # Send media if AI requested
+    send_media_ids = result.get("send_media")
+    if send_media_ids:
+        media_list = db.query(Media).filter(
+            Media.seller_id == seller.id,
+        ).all()
+        for idx in send_media_ids:
+            if 1 <= idx <= len(media_list):
+                m = media_list[idx - 1]
+                await send_media_message(sender_id, m.url, m.media_type, seller.fb_page_access_token)
 
     # If a new order was created, send confirmation + notify seller
     new_order = result.get("new_order")

@@ -226,6 +226,13 @@
             </div>
         </div>
 
+        <a href="#" id="dashLink" style="
+            display:block; text-align:center; padding:14px 28px;
+            background:#0071e3; color:white; border-radius:980px;
+            font-size:15px; font-weight:500; text-decoration:none;
+            margin-bottom:20px; transition: background 0.15s;
+        " onmouseover="this.style.background='#0077ed'" onmouseout="this.style.background='#0071e3'">Open Dashboard</a>
+
         <div class="trial">
             <div class="trial-text">
                 Free trial চালু আছে।<br>
@@ -240,6 +247,7 @@
         if (p.get('page_name')) document.getElementById('pageName').textContent = p.get('page_name');
         if (p.get('page_id')) document.getElementById('pageId').textContent = p.get('page_id');
         if (p.get('products')) document.getElementById('productCount').textContent = p.get('products');
+        if (p.get('seller_id')) document.getElementById('dashLink').href = '/dashboard?seller_id=' + p.get('seller_id');
         if (p.get('trial_expires')) {
             const d = Math.max(0, Math.ceil((new Date(p.get('trial_expires')) - new Date()) / 86400000));
             document.getElementById('trialDays').textContent = d;

@@ -119,6 +119,29 @@ async def send_private_reply(comment_id: str, message_text: str, page_access_tok
         return {"error": "all methods failed"}
 
 
+async def send_media_message(recipient_id: str, media_url: str, media_type: str, page_access_token: str):
+    """Send an image or video to a customer."""
+    url = f"{GRAPH_API_BASE}/me/messages"
+    params = {"access_token": page_access_token}
+    attachment_type = "image" if media_type == "image" else "video"
+    payload = {
+        "recipient": {"id": recipient_id},
+        "messaging_type": "RESPONSE",
+        "message": {
+            "attachment": {
+                "type": attachment_type,
+                "payload": {"url": media_url, "is_reusable": True}
+            }
+        },
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, params=params, json=payload)
+        if response.status_code != 200:
+            print(f"Media send failed: {response.status_code} {response.text}")
+        return response.json()
+
+
 async def send_typing_indicator(recipient_id: str, page_access_token: str, action: str = "typing_on"):
     """Show typing indicator while AI processes the message."""
     url = f"{GRAPH_API_BASE}/me/messages"

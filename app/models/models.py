@@ -26,6 +26,11 @@ class Seller(Base):
     delivery_time = Column(Text, default="Dhaka: 1-2 days, Outside Dhaka: 3-5 days")
     return_policy = Column(Text, default="7 days return policy")
 
+    # Custom AI config
+    bot_name = Column(String, default="AI Assistant")
+    custom_instructions = Column(Text, default="")  # Seller's custom rules for the bot
+    learned_knowledge = Column(Text, default="")  # Auto-learned from owner corrections
+
     # Subscription
     plan = Column(String, default="trial")  # trial, starter, growth, professional
     plan_expires_at = Column(DateTime)
@@ -119,3 +124,16 @@ class Order(Base):
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Media(Base):
+    """Media files uploaded by sellers for the bot to send."""
+    __tablename__ = "media"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    seller_id = Column(String, ForeignKey("sellers.id"), nullable=False)
+    name = Column(String, nullable=False)
+    url = Column(String, nullable=False)
+    media_type = Column(String, default="image")  # image, video
+    tags = Column(String, default="")  # Comma-separated tags for AI to match
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

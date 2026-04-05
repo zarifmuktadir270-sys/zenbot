@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
 
 from app.models.database import get_db
-from app.models.models import Seller, Product, Customer, Order, Conversation
+from app.models.models import Seller, Product, Customer, Order, Conversation, Media
 from app.services.page_scraper import scrape_and_save_products
 
 router = APIRouter(prefix="/api/seller", tags=["seller"])
@@ -32,6 +32,36 @@ class SellerUpdate(BaseModel):
     payment_methods: Optional[str] = None
     delivery_time: Optional[str] = None
     return_policy: Optional[str] = None
+    bot_name: Optional[str] = None
+    custom_instructions: Optional[str] = None
+
+
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    price: Optional[float] = None
+    price_text: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    is_available: Optional[bool] = None
+
+
+class ProductCreate(BaseModel):
+    name: str
+    price: Optional[float] = None
+    price_text: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+class MediaCreate(BaseModel):
+    name: str
+    url: str
+    media_type: str = "image"
+    tags: str = ""
+
+
+class LearnInput(BaseModel):
+    knowledge: str
 
 
 # === ROUTES ===
@@ -83,14 +113,10 @@ async def update_settings(seller_id: str, data: SellerUpdate, db: Session = Depe
     if not seller:
         raise HTTPException(status_code=404, detail="Seller not found")
 
-    if data.delivery_info is not None:
-        seller.delivery_info = data.delivery_info
-    if data.payment_methods is not None:
-        seller.payment_methods = data.payment_methods
-    if data.delivery_time is not None:
-        seller.delivery_time = data.delivery_time
-    if data.return_policy is not None:
-        seller.return_policy = data.return_policy
+    for field in ["delivery_info", "payment_methods", "delivery_time", "return_policy", "bot_name", "custom_instructions"]:
+        val = getattr(data, field, None)
+        if val is not None:
+            setattr(seller, field, val)
 
     db.commit()
     return {"message": "Settings updated"}
@@ -202,19 +228,123 @@ async def get_products(seller_id: str, db: Session = Depends(get_db)):
 
 @router.get("/{seller_id}/conversations")
 async def get_conversations(seller_id: str, customer_id: str = None, db: Session = Depends(get_db)):
-    """View conversation history. Optionally filter by customer."""
+    """View conversation history."""
     query = db.query(Conversation).filter(Conversation.seller_id == seller_id)
     if customer_id:
         query = query.filter(Conversation.customer_id == customer_id)
-
     messages = query.order_by(Conversation.created_at.desc()).limit(100).all()
     return [
-        {
-            "id": m.id,
-            "sender": m.sender,
-            "message": m.message,
-            "intent": m.intent,
-            "created_at": m.created_at.isoformat(),
-        }
+        {"id": m.id, "sender": m.sender, "message": m.message, "intent": m.intent, "created_at": m.created_at.isoformat()}
         for m in messages
     ]
+
+
+@router.get("/{seller_id}/settings")
+async def get_settings(seller_id: str, db: Session = Depends(get_db)):
+    """Get all seller settings for the dashboard."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    return {
+        "bot_name": getattr(seller, "bot_name", "") or "AI Assistant",
+        "custom_instructions": getattr(seller, "custom_instructions", "") or "",
+        "learned_knowledge": getattr(seller, "learned_knowledge", "") or "",
+        "delivery_info": seller.delivery_info or "",
+        "payment_methods": seller.payment_methods or "",
+        "delivery_time": seller.delivery_time or "",
+        "return_policy": seller.return_policy or "",
+        "fb_page_name": seller.fb_page_name,
+    }
+
+
+# --- Product CRUD ---
+
+@router.post("/{seller_id}/products")
+async def add_product(seller_id: str, data: ProductCreate, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    product = Product(
+        seller_id=seller_id, name=data.name, price=data.price,
+        price_text=data.price_text, description=data.description,
+        image_url=data.image_url,
+    )
+    db.add(product)
+    db.commit()
+    return {"id": product.id, "message": "Product added"}
+
+
+@router.put("/{seller_id}/products/{product_id}")
+async def edit_product(seller_id: str, product_id: str, data: ProductUpdate, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id, Product.seller_id == seller_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    for field in ["name", "price", "price_text", "description", "image_url", "is_available"]:
+        val = getattr(data, field, None)
+        if val is not None:
+            setattr(product, field, val)
+    db.commit()
+    return {"message": "Product updated"}
+
+
+@router.delete("/{seller_id}/products/{product_id}")
+async def delete_product(seller_id: str, product_id: str, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == product_id, Product.seller_id == seller_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    db.delete(product)
+    db.commit()
+    return {"message": "Product deleted"}
+
+
+# --- Learning ---
+
+@router.post("/{seller_id}/learn")
+async def add_knowledge(seller_id: str, data: LearnInput, db: Session = Depends(get_db)):
+    """Owner teaches the bot something new. Persists forever."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    current = getattr(seller, "learned_knowledge", "") or ""
+    seller.learned_knowledge = (current + "\n" + data.knowledge).strip()
+    db.commit()
+    return {"message": "Knowledge saved", "total_entries": len(seller.learned_knowledge.split("\n"))}
+
+
+@router.delete("/{seller_id}/learn")
+async def clear_knowledge(seller_id: str, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    seller.learned_knowledge = ""
+    db.commit()
+    return {"message": "Knowledge cleared"}
+
+
+# --- Media ---
+
+@router.get("/{seller_id}/media")
+async def get_media(seller_id: str, db: Session = Depends(get_db)):
+    media = db.query(Media).filter(Media.seller_id == seller_id).all()
+    return [{"id": m.id, "name": m.name, "url": m.url, "media_type": m.media_type, "tags": m.tags} for m in media]
+
+
+@router.post("/{seller_id}/media")
+async def add_media(seller_id: str, data: MediaCreate, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    media = Media(seller_id=seller_id, name=data.name, url=data.url, media_type=data.media_type, tags=data.tags)
+    db.add(media)
+    db.commit()
+    return {"id": media.id, "message": "Media added"}
+
+
+@router.delete("/{seller_id}/media/{media_id}")
+async def delete_media(seller_id: str, media_id: str, db: Session = Depends(get_db)):
+    media = db.query(Media).filter(Media.id == media_id, Media.seller_id == seller_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    db.delete(media)
+    db.commit()
+    return {"message": "Media deleted"}
