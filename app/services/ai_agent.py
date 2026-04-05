@@ -14,7 +14,6 @@ from app.models.models import Seller, Product, Customer, Conversation, Order
 
 KILO_BASE_URL = "https://api.kilo.ai/api/gateway"
 KILO_MODELS = [
-    "stepfun/step-3.5-flash:free",
     "bytedance-seed/dola-seed-2.0-pro:free",
     "qwen/qwen3.6-plus:free",
 ]
