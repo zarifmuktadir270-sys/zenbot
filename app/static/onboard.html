@@ -3,124 +3,366 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZenBot - আপনার ফেসবুক পেজ কানেক্ট করুন</title>
+    <title>Zen Labs - AI Customer Service for Facebook Sellers</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --accent: #06b6d4;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(148, 163, 184, 0.1);
+            --glow: rgba(99, 102, 241, 0.15);
+        }
+
         body {
-            font-family: 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', 'Noto Sans Bengali', -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            overflow-x: hidden;
         }
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 500px;
-            width: 100%;
-            padding: 50px 40px;
-            text-align: center;
+
+        /* Animated background */
+        .bg-gradient {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 50%, rgba(6, 182, 212, 0.08), transparent),
+                radial-gradient(ellipse 60% 40% at 20% 80%, rgba(99, 102, 241, 0.08), transparent);
+            z-index: 0;
         }
+
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+        }
+
+        /* Layout */
+        .page-wrapper {
+            position: relative; z-index: 1;
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+
+        /* Nav */
+        nav {
+            padding: 20px 40px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
         .logo {
-            width: 80px; height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            margin: 0 auto 30px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 40px; color: white; font-weight: bold;
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text-primary);
         }
-        .trial-badge {
-            display: inline-block;
-            background: #fef5e7; color: #f39c12;
-            padding: 8px 16px; border-radius: 20px;
-            font-size: 14px; font-weight: 600; margin-bottom: 20px;
+
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 16px; color: white;
         }
-        h1 { font-size: 26px; color: #1a202c; margin-bottom: 12px; }
-        .subtitle { color: #718096; font-size: 15px; margin-bottom: 35px; line-height: 1.7; }
-        .features { text-align: left; margin-bottom: 35px; }
-        .feature {
-            display: flex; align-items: center; margin-bottom: 14px;
+
+        .logo-text {
+            font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
         }
-        .feature-icon {
-            width: 22px; height: 22px; background: #48bb78; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 13px; margin-right: 12px; flex-shrink: 0;
+
+        .logo-text span { color: var(--text-muted); font-weight: 400; }
+
+        .nav-badge {
+            font-size: 11px; padding: 4px 10px;
+            background: rgba(6, 182, 212, 0.1); color: var(--accent);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 20px; font-weight: 500;
         }
-        .feature-text { color: #4a5568; font-size: 14px; }
+
+        /* Hero */
+        .hero {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 20px 20px 60px;
+        }
+
+        .hero-content {
+            max-width: 1100px; width: 100%;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+            align-items: center;
+        }
+
+        .hero-left { max-width: 500px; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 20px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            font-size: 13px; color: var(--primary-light);
+            font-weight: 500; margin-bottom: 24px;
+        }
+
+        .badge-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #22c55e; animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+        }
+
+        h1 {
+            font-size: 48px; font-weight: 800; line-height: 1.1;
+            letter-spacing: -1.5px; margin-bottom: 20px;
+        }
+
+        h1 .gradient-text {
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 17px; color: var(--text-secondary);
+            line-height: 1.7; margin-bottom: 36px;
+            font-family: 'Noto Sans Bengali', sans-serif;
+        }
+
+        /* CTA Button */
+        .cta-group { display: flex; flex-direction: column; gap: 14px; }
+
         .connect-btn {
-            background: #1877f2; color: white; border: none;
-            padding: 16px 40px; font-size: 17px; font-weight: 600;
-            border-radius: 10px; cursor: pointer; width: 100%;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s ease; text-decoration: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+            padding: 16px 32px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            background: linear-gradient(135deg, #1877f2, #0d65d9);
+            color: white; transition: all 0.3s ease;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+            position: relative; overflow: hidden;
         }
+
+        .connect-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .connect-btn:hover::before { left: 100%; }
+
         .connect-btn:hover {
-            background: #166fe5; transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(24, 119, 242, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(24, 119, 242, 0.4);
         }
-        .fb-icon { margin-right: 10px; font-size: 22px; }
-        .loading { display: none; margin-top: 20px; color: #718096; }
-        .spinner {
-            border: 3px solid #f3f4f6; border-top: 3px solid #667eea;
-            border-radius: 50%; width: 30px; height: 30px;
-            animation: spin 1s linear infinite; margin: 0 auto 10px;
+
+        .connect-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .connect-btn svg { width: 20px; height: 20px; fill: white; }
+
+        .cta-note {
+            font-size: 13px; color: var(--text-muted);
+            display: flex; align-items: center; gap: 6px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .security-note {
-            margin-top: 25px; padding-top: 25px;
-            border-top: 1px solid #e2e8f0;
-            font-size: 12px; color: #a0aec0; line-height: 1.6;
+
+        .cta-note svg { width: 14px; height: 14px; stroke: var(--text-muted); fill: none; }
+
+        /* Feature Cards - Right Side */
+        .features-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            background: rgba(30, 41, 59, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; margin-bottom: 14px;
+        }
+
+        .feature-icon.purple { background: rgba(99, 102, 241, 0.15); }
+        .feature-icon.cyan { background: rgba(6, 182, 212, 0.15); }
+        .feature-icon.green { background: rgba(34, 197, 94, 0.15); }
+        .feature-icon.orange { background: rgba(249, 115, 22, 0.15); }
+
+        .feature-card h3 {
+            font-size: 14px; font-weight: 600; margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            font-size: 13px; color: var(--text-muted); line-height: 1.5;
+            font-family: 'Noto Sans Bengali', sans-serif;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex; gap: 32px; margin-top: 40px;
+            padding-top: 24px; border-top: 1px solid var(--border);
+        }
+
+        .stat-item { text-align: center; }
+        .stat-value {
+            font-size: 24px; font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Loading */
+        .loading { display: none; margin-top: 16px; }
+        .loading-bar {
+            height: 3px; background: var(--bg-card); border-radius: 3px; overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%; width: 30%; background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 3px; animation: loading-slide 1.5s ease-in-out infinite;
+        }
+        @keyframes loading-slide {
+            0% { transform: translateX(-100%); } 100% { transform: translateX(400%); }
+        }
+        .loading-text {
+            font-size: 13px; color: var(--text-muted); margin-top: 8px; text-align: center;
+            font-family: 'Noto Sans Bengali', sans-serif;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            nav { padding: 16px 20px; }
+            .hero { padding: 20px 20px 40px; }
+            .hero-content { grid-template-columns: 1fr; gap: 40px; }
+            .hero-left { max-width: 100%; }
+            h1 { font-size: 32px; }
+            .hero-subtitle { font-size: 15px; }
+            .features-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .feature-card { padding: 18px; }
+            .stats-bar { gap: 20px; flex-wrap: wrap; justify-content: center; }
+        }
+
+        @media (max-width: 480px) {
+            .features-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 28px; }
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="logo">Z</div>
-        <span class="trial-badge">১৪ দিন ফ্রি ট্রায়াল</span>
-        <h1>আপনার ফেসবুক পেজ কানেক্ট করুন</h1>
-        <p class="subtitle">
-            AI কাস্টমার সার্ভিস দিয়ে আপনার ই-কমার্স বিজনেস চালান। কোনো কোডিং লাগবে না।
-        </p>
-        <div class="features">
-            <div class="feature">
-                <div class="feature-icon">&#10003;</div>
-                <div class="feature-text">মেসেঞ্জারে ২৪/৭ অটো রিপ্লাই</div>
+    <div class="bg-gradient"></div>
+    <div class="grid-bg"></div>
+
+    <div class="page-wrapper">
+        <nav>
+            <a href="/" class="logo">
+                <div class="logo-icon">Z</div>
+                <div class="logo-text">Zen Labs</div>
+            </a>
+            <div class="nav-badge">14 Days Free Trial</div>
+        </nav>
+
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-left">
+                    <div class="badge">
+                        <div class="badge-dot"></div>
+                        AI-Powered Automation
+                    </div>
+
+                    <h1>
+                        Turn Your Facebook Page Into a
+                        <span class="gradient-text">Smart Store</span>
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        আপনার ফেসবুক পেজে AI কাস্টমার সার্ভিস যোগ করুন। Messenger এ ২৪/৭ অটো রিপ্লাই,
+                        অর্ডার কালেকশন, আর প্রোডাক্ট শো — সব অটোমেটিক।
+                    </p>
+
+                    <div class="cta-group">
+                        <button class="connect-btn" id="connectBtn" onclick="connectFacebook()">
+                            <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            Connect Facebook Page
+                        </button>
+
+                        <div class="cta-note">
+                            <svg viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Secure OAuth connection. No password needed.
+                        </div>
+                    </div>
+
+                    <div class="loading" id="loading">
+                        <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+                        <div class="loading-text">Facebook এ কানেক্ট হচ্ছে...</div>
+                    </div>
+                </div>
+
+                <div class="hero-right">
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon purple">&#128172;</div>
+                            <h3>Auto Reply</h3>
+                            <p>Messenger এ ২৪/৭ AI অটো রিপ্লাই। কাস্টমার কে wait করতে হবে না।</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon cyan">&#128230;</div>
+                            <h3>Order Collection</h3>
+                            <p>চ্যাটেই অর্ডার নিন — নাম, ফোন, এড্রেস, পেমেন্ট সব collect হবে।</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon green">&#128247;</div>
+                            <h3>Product Catalog</h3>
+                            <p>পেজের পোস্ট থেকে অটো প্রোডাক্ট sync। ছবিসহ কাস্টমারকে দেখান।</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon orange">&#128172;</div>
+                            <h3>Comment Reply</h3>
+                            <p>পোস্টে কমেন্ট করলে অটো DM। "দাম কত?" লিখলেই ইনবক্সে চলে আসবে।</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <div class="stat-value">24/7</div>
+                            <div class="stat-label">Always Online</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">&lt;5s</div>
+                            <div class="stat-label">Reply Time</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">100%</div>
+                            <div class="stat-label">Auto Orders</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Setup Needed</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="feature">
-                <div class="feature-icon">&#10003;</div>
-                <div class="feature-text">অর্ডার, দাম ও ডেলিভারি সংক্রান্ত প্রশ্নের উত্তর</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">&#10003;</div>
-                <div class="feature-text">পোস্ট থেকে অটোমেটিক প্রোডাক্ট ক্যাটালগ</div>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">&#10003;</div>
-                <div class="feature-text">অর্ডার ট্র্যাকিং ও কাস্টমার ম্যানেজমেন্ট</div>
-            </div>
-        </div>
-        <button class="connect-btn" id="connectBtn" onclick="connectFacebook()">
-            <span class="fb-icon">f</span>
-            ফেসবুক পেজ কানেক্ট করুন
-        </button>
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <div>ফেসবুকে কানেক্ট হচ্ছে...</div>
-        </div>
-        <div class="security-note">
-            নিরাপদ OAuth কানেকশন। শুধুমাত্র আপনার পেজের মেসেজ ও পোস্ট অ্যাক্সেস করা হবে।
-        </div>
+        </section>
     </div>
+
     <script>
         async function connectFacebook() {
             const btn = document.getElementById('connectBtn');
             const loading = document.getElementById('loading');
             btn.disabled = true;
-            btn.style.opacity = '0.6';
             loading.style.display = 'block';
             try {
                 const response = await fetch('/api/auth/facebook/login');
@@ -128,12 +370,14 @@
                 if (data.auth_url) {
                     window.location.href = data.auth_url;
                 } else {
-                    alert('ফেসবুক লগইন URL তৈরি করা যায়নি');
-                    btn.disabled = false; btn.style.opacity = '1'; loading.style.display = 'none';
+                    alert('Facebook login URL could not be generated. Please try again.');
+                    btn.disabled = false;
+                    loading.style.display = 'none';
                 }
             } catch (error) {
-                alert('কানেকশন ব্যর্থ। আবার চেষ্টা করুন।');
-                btn.disabled = false; btn.style.opacity = '1'; loading.style.display = 'none';
+                alert('Connection failed. Please try again.');
+                btn.disabled = false;
+                loading.style.display = 'none';
             }
         }
     </script>

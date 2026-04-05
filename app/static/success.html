@@ -3,100 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>সফলভাবে কানেক্ট হয়েছে!</title>
+    <title>Connected - Zen Labs</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #a5b4fc;
+            --accent: #06b6d4;
+            --success: #22c55e;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: rgba(30, 41, 59, 0.8);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(148, 163, 184, 0.1);
+        }
+
         body {
-            font-family: 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', 'Noto Sans Bengali', -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
             min-height: 100vh;
-            display: flex; align-items: center; justify-content: center; padding: 20px;
+            overflow-x: hidden;
         }
-        .container {
-            background: white; border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 500px; width: 100%; padding: 50px 40px; text-align: center;
+
+        .bg-gradient {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 197, 94, 0.1), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 50%, rgba(6, 182, 212, 0.06), transparent);
+            z-index: 0;
         }
-        .success-icon {
-            width: 100px; height: 100px; background: #48bb78; border-radius: 50%;
-            margin: 0 auto 30px; display: flex; align-items: center; justify-content: center;
-            font-size: 60px; color: white; animation: scaleIn 0.5s ease-out;
+
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px; z-index: 0;
         }
-        @keyframes scaleIn { 0% { transform: scale(0); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        h1 { font-size: 26px; color: #1a202c; margin-bottom: 15px; }
-        .page-name { color: #667eea; font-weight: 600; }
-        .subtitle { color: #718096; font-size: 15px; margin-bottom: 30px; line-height: 1.7; }
-        .info-box {
-            background: #f7fafc; border-radius: 10px; padding: 20px; margin-bottom: 25px; text-align: left;
+
+        .page-wrapper {
+            position: relative; z-index: 1;
+            min-height: 100vh; display: flex; flex-direction: column;
         }
-        .info-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
-        .info-item:last-child { border-bottom: none; }
-        .info-label { color: #718096; font-size: 14px; }
-        .info-value { color: #1a202c; font-weight: 600; font-size: 14px; }
-        .next-steps { background: #edf2f7; border-radius: 10px; padding: 20px; margin-bottom: 25px; text-align: left; }
-        .next-steps h3 { color: #2d3748; font-size: 16px; margin-bottom: 15px; }
-        .step { display: flex; align-items: flex-start; margin-bottom: 12px; }
-        .step-number {
-            width: 24px; height: 24px; background: #667eea; color: white; border-radius: 50%;
+
+        nav {
+            padding: 20px 40px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 16px; color: white;
+        }
+
+        .logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+
+        /* Main content */
+        .main {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 20px 20px 60px;
+        }
+
+        .content { max-width: 600px; width: 100%; }
+
+        /* Success header */
+        .success-header { text-align: center; margin-bottom: 36px; }
+
+        .success-icon-wrap {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: var(--success-bg);
+            border: 2px solid rgba(34, 197, 94, 0.2);
             display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 600; margin-right: 10px; flex-shrink: 0;
+            margin: 0 auto 24px;
+            animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .step-text { color: #4a5568; font-size: 14px; line-height: 1.5; }
-        .trial-note {
-            margin-top: 20px; padding: 15px; background: #fef5e7;
-            border-radius: 10px; color: #f39c12; font-size: 14px; font-weight: 600;
+
+        .success-icon-wrap svg {
+            width: 32px; height: 32px; stroke: var(--success); fill: none; stroke-width: 3;
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .success-header h1 {
+            font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px;
+        }
+
+        .success-header p {
+            font-size: 15px; color: var(--text-secondary); line-height: 1.6;
+            font-family: 'Noto Sans Bengali', sans-serif;
+        }
+
+        .page-name { color: var(--accent); font-weight: 600; }
+
+        /* Info cards */
+        .info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .info-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px;
+        }
+
+        .info-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-value { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+        .info-value.highlight { color: var(--accent); }
+
+        /* Steps */
+        .steps-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 28px; margin-bottom: 28px;
+        }
+
+        .steps-title {
+            font-size: 16px; font-weight: 600; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .step {
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 12px 0;
+        }
+
+        .step + .step { border-top: 1px solid var(--border); }
+
+        .step-indicator {
+            width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+        }
+
+        .step-indicator.active {
+            background: var(--success-bg); color: var(--success);
+        }
+
+        .step-indicator.pending {
+            background: rgba(99, 102, 241, 0.1); color: var(--primary-light);
+        }
+
+        .step-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .step-content p {
+            font-size: 13px; color: var(--text-muted); line-height: 1.5;
+            font-family: 'Noto Sans Bengali', sans-serif;
+        }
+
+        /* Trial banner */
+        .trial-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px; padding: 18px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 16px;
+        }
+
+        .trial-info { font-size: 14px; color: var(--text-secondary); font-family: 'Noto Sans Bengali', sans-serif; }
+        .trial-info strong { color: var(--primary-light); }
+
+        .trial-days {
+            font-size: 28px; font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 600px) {
+            nav { padding: 16px 20px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .trial-banner { flex-direction: column; text-align: center; }
+            .success-header h1 { font-size: 24px; }
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="success-icon">&#10003;</div>
-        <h1>সফলভাবে কানেক্ট হয়েছে!</h1>
-        <p class="subtitle">
-            আপনার ফেসবুক পেজ <span class="page-name" id="pageName">...</span> এখন AI কাস্টমার সার্ভিসে চালু আছে।
-        </p>
-        <div class="info-box">
-            <div class="info-item">
-                <span class="info-label">পেজ আইডি</span>
-                <span class="info-value" id="pageId">...</span>
+    <div class="bg-gradient"></div>
+    <div class="grid-bg"></div>
+
+    <div class="page-wrapper">
+        <nav>
+            <a href="/" class="logo">
+                <div class="logo-icon">Z</div>
+                <div class="logo-text">Zen Labs</div>
+            </a>
+        </nav>
+
+        <section class="main">
+            <div class="content">
+                <div class="success-header">
+                    <div class="success-icon-wrap">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <h1>Successfully Connected!</h1>
+                    <p>
+                        <span class="page-name" id="pageName">Your Page</span> এখন Zen Labs AI দিয়ে চালু আছে।
+                        কাস্টমাররা মেসেজ করলেই অটো রিপ্লাই পাবে।
+                    </p>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">Page ID</div>
+                        <div class="info-value" id="pageId">...</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Products Synced</div>
+                        <div class="info-value highlight" id="productCount">...</div>
+                    </div>
+                </div>
+
+                <div class="steps-card">
+                    <div class="steps-title">What's happening now</div>
+
+                    <div class="step">
+                        <div class="step-indicator active">&#10003;</div>
+                        <div class="step-content">
+                            <h4>AI Assistant Active</h4>
+                            <p>Messenger এ কাস্টমারদের সব প্রশ্নের উত্তর দিচ্ছে এখনই।</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-indicator active">&#10003;</div>
+                        <div class="step-content">
+                            <h4>Products Auto-Synced</h4>
+                            <p>আপনার পেজের পোস্ট থেকে প্রোডাক্ট ক্যাটালগ তৈরি হচ্ছে।</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-indicator active">&#10003;</div>
+                        <div class="step-content">
+                            <h4>Comment Auto-DM</h4>
+                            <p>পোস্টে কমেন্ট করলে অটো ইনবক্সে মেসেজ যাবে।</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-indicator pending">&#8594;</div>
+                        <div class="step-content">
+                            <h4>Order Notifications</h4>
+                            <p>নতুন অর্ডার আসলে আপনাকে মেসেজে জানানো হবে।</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trial-banner">
+                    <div class="trial-info">
+                        আপনার <strong>free trial</strong> শুরু হয়েছে।<br>
+                        কোনো credit card লাগবে না।
+                    </div>
+                    <div class="trial-days" id="trialDays">14 Days</div>
+                </div>
             </div>
-            <div class="info-item">
-                <span class="info-label">প্রোডাক্ট পাওয়া গেছে</span>
-                <span class="info-value" id="productCount">...</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">ট্রায়াল শেষ হবে</span>
-                <span class="info-value" id="trialExpires">...</span>
-            </div>
-        </div>
-        <div class="next-steps">
-            <h3>এখন কী হবে?</h3>
-            <div class="step">
-                <div class="step-number">১</div>
-                <div class="step-text">আপনার AI অ্যাসিস্ট্যান্ট এখনই মেসেঞ্জারে রিপ্লাই দিচ্ছে</div>
-            </div>
-            <div class="step">
-                <div class="step-number">২</div>
-                <div class="step-text">পেজের পোস্ট থেকে প্রোডাক্ট অটোমেটিক সিঙ্ক হচ্ছে</div>
-            </div>
-            <div class="step">
-                <div class="step-number">৩</div>
-                <div class="step-text">ড্যাশবোর্ডে অর্ডার ও কাস্টমার দেখুন</div>
-            </div>
-        </div>
-        <div class="trial-note">
-            আপনার ১৪ দিনের ফ্রি ট্রায়াল শুরু হয়েছে! কোনো ক্রেডিট কার্ড লাগবে না।
-        </div>
+        </section>
     </div>
+
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('page_name')) document.getElementById('pageName').textContent = urlParams.get('page_name');
-        if (urlParams.get('page_id')) document.getElementById('pageId').textContent = urlParams.get('page_id');
-        if (urlParams.get('products')) document.getElementById('productCount').textContent = urlParams.get('products') + ' টি';
-        if (urlParams.get('trial_expires')) {
-            const date = new Date(urlParams.get('trial_expires'));
-            document.getElementById('trialExpires').textContent = date.toLocaleDateString('bn-BD');
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('page_name')) document.getElementById('pageName').textContent = params.get('page_name');
+        if (params.get('page_id')) document.getElementById('pageId').textContent = params.get('page_id');
+        if (params.get('products')) document.getElementById('productCount').textContent = params.get('products') + ' products';
+        if (params.get('trial_expires')) {
+            const expires = new Date(params.get('trial_expires'));
+            const now = new Date();
+            const days = Math.max(0, Math.ceil((expires - now) / (1000 * 60 * 60 * 24)));
+            document.getElementById('trialDays').textContent = days + ' Days';
         }
     </script>
 </body>

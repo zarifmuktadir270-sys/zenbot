@@ -159,7 +159,7 @@ async def facebook_callback(
             f"https://graph.facebook.com/v18.0/{page_id}/subscribed_apps",
             params={
                 "access_token": page_access_token,
-                "subscribed_fields": "messages,messaging_postbacks,messaging_optins,message_deliveries,message_reads"
+                "subscribed_fields": "messages,messaging_postbacks,messaging_optins,message_deliveries,message_reads,feed"
             }
         )
 

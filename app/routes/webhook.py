@@ -15,6 +15,7 @@ from app.utils.facebook import (
     send_message,
     send_typing_indicator,
     send_product_cards,
+    send_private_reply,
     get_user_profile,
     verify_webhook_signature,
 )
@@ -78,7 +79,64 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
 
             await handle_customer_message(db, page_id, sender_id, message_text)
 
+        # Handle comments on posts (feed webhook)
+        for change in entry.get("changes", []):
+            if change.get("field") == "feed" and change.get("value", {}).get("item") == "comment":
+                value = change["value"]
+                # Skip if it's the page's own comment
+                if value.get("from", {}).get("id") == page_id:
+                    continue
+                comment_id = value.get("comment_id")
+                if comment_id:
+                    # Dedup comments too
+                    existing = db.query(ProcessedMessage).filter(ProcessedMessage.mid == f"comment_{comment_id}").first()
+                    if existing:
+                        continue
+                    db.add(ProcessedMessage(mid=f"comment_{comment_id}"))
+                    db.commit()
+
+                    await handle_comment(db, page_id, value)
+
     return {"status": "ok"}
+
+
+async def handle_comment(db: Session, page_id: str, value: dict):
+    """When someone comments on a post, send them a private DM via Messenger."""
+    seller = db.query(Seller).filter(Seller.fb_page_id == page_id).first()
+    if not seller:
+        return
+
+    comment_id = value.get("comment_id")
+    comment_text = value.get("message", "").strip()
+    commenter_name = value.get("from", {}).get("name", "")
+    post_id = value.get("post_id", "")
+
+    # Find matching product from the post
+    product_info = ""
+    if post_id:
+        product = db.query(Product).filter(
+            Product.seller_id == seller.id,
+            Product.fb_post_id == post_id,
+            Product.is_available == True,
+        ).first()
+        if product:
+            product_info = f"\n\nProduct: {product.name}"
+            if product.price_text or product.price:
+                product_info += f"\nPrice: {product.price_text or str(product.price) + ' BDT'}"
+
+    # Build a friendly DM
+    dm_text = (
+        f"Hi {commenter_name}! {seller.fb_page_name} এ আপনার comment দেখেছি। "
+        f"ধন্যবাদ!"
+    )
+    if product_info:
+        dm_text += product_info
+    dm_text += "\n\nকোনো প্রশ্ন থাকলে এখানে message করুন, আমি সাহায্য করব!"
+
+    try:
+        await send_private_reply(comment_id, dm_text, seller.fb_page_access_token)
+    except Exception as e:
+        print(f"Comment auto-DM failed: {e}")
 
 
 async def handle_customer_message(db: Session, page_id: str, sender_id: str, message_text: str):
