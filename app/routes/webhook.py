@@ -223,8 +223,11 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
 
     now = datetime.now(timezone.utc)
 
-    # Check if plan has expired
-    if seller.plan_expires_at and now > seller.plan_expires_at:
+    # Check if plan has expired (handle naive datetimes from DB)
+    plan_exp = seller.plan_expires_at
+    if plan_exp and plan_exp.tzinfo is None:
+        plan_exp = plan_exp.replace(tzinfo=timezone.utc)
+    if plan_exp and now > plan_exp:
         if seller.plan == "trial":
             # Trial expired — send one-time message and stop
             await send_message(
