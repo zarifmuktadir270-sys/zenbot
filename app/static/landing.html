@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zen Labs — AI Customer Service for Facebook Pages</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #86868b;
+            --bg: #fbfbfd;
+            --bg-card: #ffffff;
+            --bg-elevated: #f5f5f7;
+            --border: #e8e8ed;
+            --accent: #0071e3;
+            --accent-hover: #0077ed;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+        }
+
+        .container { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+        /* ---- NAV ---- */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(251,251,253,0.85);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 980px; margin: 0 auto; padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo { text-decoration: none; color: var(--text-primary); font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+        .nav-links { display: flex; align-items: center; gap: 32px; }
+        .nav-links a {
+            font-size: 13px; color: var(--text-secondary); text-decoration: none; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text-primary); }
+        .nav-cta {
+            font-size: 13px; font-weight: 500; padding: 8px 18px;
+            background: var(--accent); color: white !important; border-radius: 980px;
+            transition: background 0.2s;
+        }
+        .nav-cta:hover { background: var(--accent-hover); color: white !important; }
+
+        /* ---- HERO ---- */
+        .hero {
+            padding: 120px 24px 80px; text-align: center;
+            max-width: 780px; margin: 0 auto;
+        }
+        .hero-badge {
+            display: inline-block; padding: 6px 16px;
+            background: var(--bg-elevated); border-radius: 980px;
+            font-size: 12px; font-weight: 600; color: var(--accent);
+            letter-spacing: 0.03em; margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: 56px; font-weight: 700; line-height: 1.05;
+            letter-spacing: -0.035em; margin-bottom: 24px;
+        }
+        .hero h1 span { color: var(--accent); }
+        .hero-sub {
+            font-size: 20px; color: var(--text-secondary); line-height: 1.6;
+            max-width: 540px; margin: 0 auto 40px;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+        .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+        .btn-primary {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 15px 30px; background: var(--accent); color: white;
+            border: none; border-radius: 980px; font-size: 15px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; font-family: inherit; text-decoration: none;
+        }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-secondary {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 15px 30px; background: transparent; color: var(--accent);
+            border: 1px solid var(--border); border-radius: 980px;
+            font-size: 15px; font-weight: 500; cursor: pointer;
+            transition: all 0.2s; font-family: inherit; text-decoration: none;
+        }
+        .btn-secondary:hover { background: var(--bg-elevated); }
+
+        .hero-note {
+            margin-top: 16px; font-size: 13px; color: var(--text-tertiary);
+        }
+
+        /* ---- DEMO / CHAT PREVIEW ---- */
+        .demo-section { padding: 0 24px 100px; }
+        .demo-window {
+            max-width: 420px; margin: 0 auto;
+            background: var(--bg-card); border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .demo-header {
+            padding: 16px 20px;
+            background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .demo-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--accent); display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 14px; font-weight: 600;
+        }
+        .demo-name { font-size: 14px; font-weight: 600; }
+        .demo-status { font-size: 11px; color: #34c759; }
+        .demo-chat { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+
+        .chat-msg {
+            max-width: 85%; padding: 10px 14px;
+            border-radius: 18px; font-size: 14px; line-height: 1.5;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+        .chat-msg.user {
+            align-self: flex-end; background: var(--accent); color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg.bot {
+            align-self: flex-start; background: var(--bg-elevated); color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+        .chat-typing {
+            align-self: flex-start; padding: 10px 16px;
+            background: var(--bg-elevated); border-radius: 18px;
+            display: flex; gap: 4px;
+        }
+        .chat-typing span {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary);
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .chat-typing span:nth-child(1) { animation-delay: -0.32s; }
+        .chat-typing span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ---- HOW IT WORKS ---- */
+        .how-section { padding: 100px 24px; }
+        .section-header { text-align: center; margin-bottom: 64px; }
+        .section-header h2 {
+            font-size: 40px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 12px;
+        }
+        .section-header p { font-size: 17px; color: var(--text-secondary); max-width: 480px; margin: 0 auto; }
+
+        .steps {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+            max-width: 980px; margin: 0 auto;
+        }
+        .step {
+            text-align: center; padding: 40px 28px;
+            background: var(--bg-card); border-radius: 20px;
+            border: 1px solid var(--border); transition: all 0.3s;
+        }
+        .step:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); transform: translateY(-2px); }
+        .step-number {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--bg-elevated); display: inline-flex;
+            align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700; color: var(--accent);
+            margin-bottom: 20px;
+        }
+        .step h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; }
+        .step p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+        /* ---- FEATURES ---- */
+        .features-section { padding: 100px 24px; background: var(--bg-elevated); }
+        .features-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+            max-width: 980px; margin: 0 auto;
+        }
+        .feature-card {
+            padding: 36px 32px; background: var(--bg-card);
+            border-radius: 20px; border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        .feature-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); transform: translateY(-2px); }
+        .feature-icon {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: var(--bg-elevated); display: flex;
+            align-items: center; justify-content: center;
+            margin-bottom: 16px; font-size: 18px;
+        }
+        .feature-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+        .feature-card p {
+            font-size: 14px; color: var(--text-secondary); line-height: 1.6;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+
+        /* ---- PRICING ---- */
+        .pricing-section { padding: 100px 24px; }
+        .pricing-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+            max-width: 680px; margin: 0 auto;
+        }
+        .price-card {
+            padding: 40px 32px; background: var(--bg-card);
+            border-radius: 20px; border: 1px solid var(--border);
+            text-align: center; transition: all 0.3s;
+        }
+        .price-card.featured {
+            border-color: var(--accent); position: relative;
+            box-shadow: 0 4px 24px rgba(0,113,227,0.1);
+        }
+        .price-card.featured::before {
+            content: 'Popular'; position: absolute; top: -12px; left: 50%;
+            transform: translateX(-50%); background: var(--accent); color: white;
+            padding: 4px 16px; border-radius: 980px; font-size: 11px; font-weight: 600;
+        }
+        .price-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .price-amount { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+        .price-period { font-size: 13px; color: var(--text-tertiary); margin-bottom: 24px; }
+        .price-features { list-style: none; text-align: left; margin-bottom: 28px; }
+        .price-features li {
+            padding: 8px 0; font-size: 14px; color: var(--text-secondary);
+            border-bottom: 1px solid var(--bg-elevated);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .price-features li::before { content: ''; width: 16px; height: 16px; flex-shrink: 0;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2334c759'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E") no-repeat center/contain;
+        }
+        .price-btn {
+            display: block; width: 100%; padding: 12px; border-radius: 980px;
+            font-size: 14px; font-weight: 500; cursor: pointer;
+            font-family: inherit; transition: all 0.2s; text-align: center; text-decoration: none;
+        }
+        .price-btn-outline { background: transparent; border: 1px solid var(--border); color: var(--accent); }
+        .price-btn-outline:hover { background: var(--bg-elevated); }
+        .price-btn-fill { background: var(--accent); border: none; color: white; }
+        .price-btn-fill:hover { background: var(--accent-hover); }
+
+        /* ---- FAQ ---- */
+        .faq-section { padding: 100px 24px; background: var(--bg-elevated); }
+        .faq-list { max-width: 640px; margin: 0 auto; }
+        .faq-item {
+            background: var(--bg-card); border-radius: 16px;
+            border: 1px solid var(--border); margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .faq-q {
+            padding: 20px 24px; font-size: 15px; font-weight: 600;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            user-select: none;
+        }
+        .faq-q::after {
+            content: '+'; font-size: 20px; font-weight: 300; color: var(--text-tertiary);
+            transition: transform 0.2s;
+        }
+        .faq-item.open .faq-q::after { content: '-'; }
+        .faq-a {
+            padding: 0 24px; max-height: 0; overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            font-size: 14px; color: var(--text-secondary); line-height: 1.7;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+        .faq-item.open .faq-a { max-height: 200px; padding: 0 24px 20px; }
+
+        /* ---- CTA ---- */
+        .cta-section {
+            padding: 100px 24px; text-align: center;
+        }
+        .cta-card {
+            max-width: 680px; margin: 0 auto;
+            background: var(--text-primary); border-radius: 24px;
+            padding: 64px 48px; color: white;
+        }
+        .cta-card h2 { font-size: 36px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 12px; }
+        .cta-card p {
+            font-size: 17px; color: rgba(255,255,255,0.6); margin-bottom: 32px;
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+        }
+        .cta-card .btn-primary { background: white; color: var(--text-primary); }
+        .cta-card .btn-primary:hover { background: #f0f0f0; }
+
+        /* ---- FOOTER ---- */
+        footer {
+            max-width: 980px; margin: 0 auto;
+            padding: 24px; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; color: var(--text-tertiary);
+        }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: var(--text-tertiary); text-decoration: none; font-size: 12px; }
+        .footer-links a:hover { color: var(--text-secondary); }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 768px) {
+            .hero { padding: 80px 24px 60px; }
+            .hero h1 { font-size: 38px; }
+            .hero-sub { font-size: 17px; }
+            .steps { grid-template-columns: 1fr; gap: 16px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; max-width: 360px; }
+            .cta-card { padding: 48px 28px; }
+            .cta-card h2 { font-size: 28px; }
+            .nav-links a:not(.nav-cta) { display: none; }
+            footer { flex-direction: column; gap: 12px; text-align: center; }
+        }
+        @media (max-width: 480px) { .hero h1 { font-size: 30px; } }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="nav-inner">
+        <a href="/" class="logo">Zen Labs</a>
+        <div class="nav-links">
+            <a href="#how">How it works</a>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+            <a href="/onboard" class="nav-cta">Get started</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-badge">AI-powered. Made for Bangladesh.</div>
+    <h1>Your Facebook page never sleeps <span>anymore.</span></h1>
+    <p class="hero-sub">
+        আপনার Facebook page এ AI assistant বসিয়ে দিন। Customer দের message এর reply, order নেওয়া, product দেখানো — সব চলবে ২৪/৭, আপনি ঘুমালেও।
+    </p>
+    <div class="hero-actions">
+        <a href="/onboard" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            Start free trial
+        </a>
+        <a href="#how" class="btn-secondary">See how it works</a>
+    </div>
+    <p class="hero-note">3 days free. No credit card. Setup in 2 minutes.</p>
+</section>
+
+<!-- CHAT DEMO -->
+<section class="demo-section">
+    <div class="demo-window">
+        <div class="demo-header">
+            <div class="demo-avatar">Z</div>
+            <div>
+                <div class="demo-name">Your Page AI</div>
+                <div class="demo-status">Active now</div>
+            </div>
+        </div>
+        <div class="demo-chat" id="demoChat">
+            <!-- Messages will animate in -->
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+    <div class="section-header">
+        <h2>Setup takes 2 minutes.</h2>
+        <p>No coding. No technical knowledge. Just connect and go.</p>
+    </div>
+    <div class="steps container">
+        <div class="step">
+            <div class="step-number">1</div>
+            <h3>Connect your page</h3>
+            <p>Facebook login দিয়ে আপনার page connect করুন। One click, secure OAuth.</p>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <h3>AI learns your shop</h3>
+            <p>আপনার page এর posts, products, info সব automatically scrape করে AI নিজে শিখে নেয়।</p>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <h3>Go live</h3>
+            <p>ব্যস, আপনার AI assistant চালু। Customers message করলে সাথে সাথে reply যাবে।</p>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="section-header">
+            <h2>Everything your page needs.</h2>
+            <p>One AI handles what used to take a full team.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3>Instant Messenger replies</h3>
+                <p>Customer message করলে সেকেন্ডের মধ্যে reply। দিন-রাত ২৪ ঘণ্টা। কোনো customer miss হবে না।</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+                </div>
+                <h3>Automatic order collection</h3>
+                <p>Chat এ নাম, phone, address নিয়ে order complete করে। আপনার dashboard এ instantly দেখাবে।</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                </div>
+                <h3>Auto product catalog</h3>
+                <p>Page এর posts থেকে products নিজে sync করে। Price, stock, photos সব automatic।</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                </div>
+                <h3>Comment to DM</h3>
+                <p>Post এ comment করলে customer কে auto DM যায়। Inbox এ conversation start হয়।</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <h3>Bangla + English naturally</h3>
+                <p>Customer যেভাবে লেখে সেভাবেই বোঝে। Reply দেয় Bangla-English mix এ, natural ভাবে।</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3>Seller dashboard</h3>
+                <p>Orders, products, customers, conversations, knowledge base — সব manage করুন এক জায়গায়।</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+    <div class="container">
+        <div class="section-header">
+            <h2>Simple pricing.</h2>
+            <p>Start free. Upgrade when you're ready.</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="price-card">
+                <h3>Free Trial</h3>
+                <div class="price-amount">0 BDT</div>
+                <div class="price-period">3 days, no card needed</div>
+                <ul class="price-features">
+                    <li>Unlimited messages</li>
+                    <li>Auto product sync</li>
+                    <li>Order collection</li>
+                    <li>Seller dashboard</li>
+                    <li>Bangla + English AI</li>
+                </ul>
+                <a href="/onboard" class="price-btn price-btn-outline">Start free</a>
+            </div>
+            <div class="price-card featured">
+                <h3>Pro</h3>
+                <div class="price-amount">2,999 BDT</div>
+                <div class="price-period">per month</div>
+                <ul class="price-features">
+                    <li>Everything in Free</li>
+                    <li>Unlimited AI replies</li>
+                    <li>Comment auto-DM</li>
+                    <li>Media sharing</li>
+                    <li>Custom knowledge base</li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="/onboard" class="price-btn price-btn-fill">Get started</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+    <div class="container">
+        <div class="section-header">
+            <h2>Questions?</h2>
+            <p>Here are the common ones.</p>
+        </div>
+        <div class="faq-list">
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">Setup করতে কি coding জানতে হবে?</div>
+                <div class="faq-a">না, একদম না। Facebook login দিলেই সব automatic হয়ে যায়। কোনো coding, API key, বা technical কিছু লাগবে না।</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">AI কি আমার page এর data access করতে পারবে?</div>
+                <div class="faq-a">AI শুধু আপনার page এর public posts আর Messenger conversation access করে। আপনার personal Facebook account এ কোনো access নেই।</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">AI ভুল তথ্য দিলে কি হবে?</div>
+                <div class="faq-a">Dashboard থেকে AI এর knowledge base edit করতে পারবেন। AI যা জানে না সেটা customer কে বলে দেয় যে owner এর কাছে confirm করে জানাবে।</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">Free trial এর পর কি automatically charge হবে?</div>
+                <div class="faq-a">না। Trial শেষ হলে chatbot pause হয়ে যাবে। আপনি manually subscribe না করলে কোনো charge হবে না।</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q" onclick="toggleFaq(this)">একসাথে কতগুলো customer handle করতে পারে?</div>
+                <div class="faq-a">AI একসাথে unlimited customers handle করতে পারে। একই সময়ে ৫০+ customer message করলেও সবাইকে reply যাবে।</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <div class="cta-card">
+        <h2>Ready to automate your page?</h2>
+        <p>আজই শুরু করুন। ৩ দিন ফ্রি, কোনো risk নেই।</p>
+        <a href="/onboard" class="btn-primary">Start free trial</a>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <span>Zen Labs, Dhaka, Bangladesh</span>
+    <div class="footer-links">
+        <a href="/static/privacy.html">Privacy</a>
+        <a href="mailto:support@zenlabs.ai">Contact</a>
+    </div>
+</footer>
+
+<script>
+    // FAQ toggle
+    function toggleFaq(el) {
+        const item = el.parentElement;
+        item.classList.toggle('open');
+    }
+
+    // Chat demo animation
+    const messages = [
+        { type: 'user', text: 'hi, blue dress ta available ache?' },
+        { type: 'bot', text: 'জি, Blue Floral Dress available আছে! Size S, M, L আছে। কোনটা চাইবেন?' },
+        { type: 'user', text: 'M size, price koto?' },
+        { type: 'bot', text: '১,২৫০ টাকা। Delivery charge ঢাকায় ৬০, বাইরে ১২০ টাকা। Order confirm করবেন?' },
+        { type: 'user', text: 'haa confirm koro' },
+        { type: 'bot', text: 'দারুণ! আপনার নাম, phone number আর delivery address টা দিন, order process করে দিচ্ছি।' },
+    ];
+
+    const chat = document.getElementById('demoChat');
+    let msgIndex = 0;
+
+    function showNextMessage() {
+        if (msgIndex >= messages.length) {
+            // Loop after pause
+            setTimeout(() => { chat.innerHTML = ''; msgIndex = 0; showNextMessage(); }, 3000);
+            return;
+        }
+        const msg = messages[msgIndex];
+
+        // Show typing indicator for bot messages
+        if (msg.type === 'bot') {
+            const typing = document.createElement('div');
+            typing.className = 'chat-typing';
+            typing.innerHTML = '<span></span><span></span><span></span>';
+            chat.appendChild(typing);
+            chat.scrollTop = chat.scrollHeight;
+
+            setTimeout(() => {
+                typing.remove();
+                addMessage(msg);
+                msgIndex++;
+                setTimeout(showNextMessage, 1200);
+            }, 800);
+        } else {
+            addMessage(msg);
+            msgIndex++;
+            setTimeout(showNextMessage, 1000);
+        }
+    }
+
+    function addMessage(msg) {
+        const div = document.createElement('div');
+        div.className = 'chat-msg ' + msg.type;
+        div.textContent = msg.text;
+        div.style.opacity = '0';
+        div.style.transform = 'translateY(8px)';
+        chat.appendChild(div);
+        requestAnimationFrame(() => {
+            div.style.transition = 'opacity 0.3s, transform 0.3s';
+            div.style.opacity = '1';
+            div.style.transform = 'translateY(0)';
+        });
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    // Start demo after a small delay
+    setTimeout(showNextMessage, 800);
+</script>
+
+</body>
+</html>

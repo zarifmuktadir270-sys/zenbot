@@ -68,10 +68,10 @@ app.include_router(auth_router)
 
 @app.get("/")
 async def root():
-    """Serve onboarding page"""
-    onboard_file = os.path.join(os.path.dirname(__file__), "static", "onboard.html")
-    if os.path.exists(onboard_file):
-        return FileResponse(onboard_file)
+    """Serve landing page"""
+    landing_file = os.path.join(os.path.dirname(__file__), "static", "landing.html")
+    if os.path.exists(landing_file):
+        return FileResponse(landing_file)
     return {
         "name": "E-commerce CS Agent",
         "status": "running",
