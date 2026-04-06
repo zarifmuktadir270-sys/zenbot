@@ -312,20 +312,33 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
             "needs_human": True,
         }
 
-    # Final cleanup: Ensure reply is clean text (no JSON artifacts)
+    # Final cleanup: Ensure reply is NEVER raw JSON
     if result.get("reply"):
         reply = result["reply"]
-        # Remove any remaining JSON structure artifacts
         if isinstance(reply, str):
-            # If it still looks like JSON, try one more extraction
-            if (reply.strip().startswith("{") and reply.strip().endswith("}")) or \
-               (reply.strip().startswith("[") and reply.strip().endswith("]")):
+            reply = reply.strip()
+            # If reply looks like JSON, extract the actual text
+            if reply.startswith("{") or reply.startswith("["):
                 try:
                     temp = json.loads(reply)
-                    if isinstance(temp, dict) and "reply" in temp:
-                        reply = temp["reply"]
+                    if isinstance(temp, dict):
+                        if "reply" in temp:
+                            reply = temp["reply"]
+                        elif "message" in temp:
+                            reply = temp["message"]
+                        elif "text" in temp:
+                            reply = temp["text"]
                 except:
-                    pass
+                    # Strip JSON artifacts with regex as last resort
+                    import re
+                    m = re.search(r'"reply"\s*:\s*"((?:[^"\\]|\\.)*)?"', reply)
+                    if m:
+                        reply = m.group(1).replace('\\"', '"').replace('\\n', '\n')
+                        # Decode unicode escapes
+                        try:
+                            reply = reply.encode().decode('unicode_escape')
+                        except:
+                            pass
             result["reply"] = reply
 
     # Save conversation to database

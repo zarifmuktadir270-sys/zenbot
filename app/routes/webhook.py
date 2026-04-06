@@ -257,9 +257,22 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
             "needs_human": True,
         }
 
-    # Send AI reply
+    # Send AI reply — ensure no raw JSON gets sent to customer
     reply_text = result.get("reply", "")
     if reply_text:
+        reply_text = reply_text.strip()
+        if reply_text.startswith("{") or reply_text.startswith("["):
+            import json as _json, re as _re
+            try:
+                parsed = _json.loads(reply_text)
+                if isinstance(parsed, dict) and "reply" in parsed:
+                    reply_text = parsed["reply"]
+            except:
+                m = _re.search(r'"reply"\s*:\s*"((?:[^"\\]|\\.)*)"', reply_text)
+                if m:
+                    reply_text = m.group(1).replace('\\"', '"').replace('\\n', '\n')
+                else:
+                    reply_text = "দুঃখিত, একটু সমস্যা হয়েছে। আবার message দিন please!"
         await send_message(sender_id, reply_text, seller.fb_page_access_token)
 
     # Send product cards with images if AI requested
