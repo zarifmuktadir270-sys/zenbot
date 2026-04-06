@@ -4,9 +4,10 @@ Allows page owners to connect their Facebook page with one click
 """
 
 import urllib.parse
+import traceback
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 import httpx
 from datetime import datetime, timezone, timedelta
@@ -75,17 +76,39 @@ async def facebook_callback(
     if not code:
         raise HTTPException(status_code=400, detail="No authorization code received")
 
-    async with httpx.AsyncClient() as client:
-        # 1. Exchange code for user access token
-        token_response = await client.get(
-            "https://graph.facebook.com/v18.0/oauth/access_token",
-            params={
-                "client_id": FB_APP_ID,
-                "client_secret": FB_APP_SECRET,
-                "redirect_uri": FB_REDIRECT_URI,
-                "code": code,
-            }
+    try:
+      return await _do_facebook_callback(code, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"ONBOARDING ERROR: {traceback.format_exc()}")
+        error_msg = urllib.parse.quote(str(e)[:200])
+        return HTMLResponse(
+            content=f"""<html><body style="font-family:Inter,sans-serif;text-align:center;padding:60px">
+            <h2>Onboarding Error</h2>
+            <p style="color:#86868b">{str(e)[:200]}</p>
+            <a href="/onboard" style="color:#d32f2f">Try Again</a>
+            </body></html>""",
+            status_code=500,
         )
+
+
+async def _do_facebook_callback(code: str, db: Session):
+    """Internal handler for the Facebook OAuth callback."""
+    async with httpx.AsyncClient(timeout=25) as client:
+        # 1. Exchange code for user access token
+        try:
+            token_response = await client.get(
+                "https://graph.facebook.com/v18.0/oauth/access_token",
+                params={
+                    "client_id": FB_APP_ID,
+                    "client_secret": FB_APP_SECRET,
+                    "redirect_uri": FB_REDIRECT_URI,
+                    "code": code,
+                }
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Facebook API timeout: {str(e)}")
 
         if token_response.status_code != 200:
             raise HTTPException(
@@ -207,20 +230,24 @@ async def facebook_callback(
             db.refresh(seller)
 
         # 8. Scrape products from page
+        product_count = 0
         try:
             product_count = await scrape_and_save_products(db, seller)
         except Exception as e:
-            product_count = 0
             print(f"Initial scrape failed: {e}")
 
         # 9. Redirect to success page with data
+        trial_expires = ""
+        if seller.plan_expires_at:
+            trial_expires = seller.plan_expires_at.isoformat()
+
         success_url = (
             f"/static/success.html?"
             f"seller_id={seller.id}"
             f"&page_name={urllib.parse.quote(page_name)}"
             f"&page_id={page_id}"
             f"&products={product_count}"
-            f"&trial_expires={urllib.parse.quote(seller.plan_expires_at.isoformat())}"
+            f"&trial_expires={urllib.parse.quote(trial_expires)}"
         )
         return RedirectResponse(url=success_url, status_code=302)
 
