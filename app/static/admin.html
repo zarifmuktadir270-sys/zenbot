@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Zen Labs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f5f5f7; color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .topbar {
+            background: #1d1d1f; color: white;
+            padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .logo { font-size: 17px; font-weight: 700; color: white; text-decoration: none; letter-spacing: -0.5px; }
+        .logo-tag { font-size: 11px; font-weight: 500; color: #86868b; background: #2d2d2f; padding: 2px 8px; border-radius: 4px; }
+
+        .layout { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+        /* Login */
+        .login-wrap {
+            max-width: 380px; margin: 120px auto; text-align: center;
+        }
+        .login-wrap h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .login-wrap p { font-size: 14px; color: #86868b; margin-bottom: 24px; }
+        .login-wrap input {
+            width: 100%; padding: 12px 16px; border: 1px solid #e8e8ed; border-radius: 10px;
+            font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px;
+        }
+        .login-wrap input:focus { border-color: #d32f2f; }
+
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+        .stat-card {
+            background: #fff; border-radius: 14px; border: 1px solid #e8e8ed; padding: 20px;
+        }
+        .stat-value { font-size: 32px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.02em; }
+        .stat-label { font-size: 12px; color: #86868b; margin-top: 2px; }
+
+        /* Section */
+        .section-title {
+            font-size: 13px; font-weight: 600; color: #86868b; text-transform: uppercase;
+            letter-spacing: 0.04em; margin-bottom: 12px;
+        }
+
+        /* Seller cards */
+        .seller-list { display: flex; flex-direction: column; gap: 10px; }
+        .seller-card {
+            background: #fff; border-radius: 14px; border: 1px solid #e8e8ed;
+            padding: 20px; display: flex; align-items: center; justify-content: space-between;
+            transition: box-shadow 0.15s;
+        }
+        .seller-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .seller-info { flex: 1; }
+        .seller-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .seller-meta { font-size: 12px; color: #86868b; display: flex; gap: 16px; flex-wrap: wrap; }
+        .seller-meta span { white-space: nowrap; }
+        .seller-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 16px; }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 980px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-inactive { background: #f8d7da; color: #721c24; }
+        .badge-trial { background: #fff3cd; color: #856404; }
+        .badge-paid { background: #cce5ff; color: #004085; }
+        .badge-expired { background: #e8e8ed; color: #6e6e73; }
+        .badge-paused { background: #ffeeba; color: #856404; }
+
+        .btn {
+            padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
+            border: 1px solid #e8e8ed; background: #fff; color: #1d1d1f;
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .btn:hover { background: #f5f5f7; }
+        .btn-red { color: #d32f2f; border-color: #ffcdd2; }
+        .btn-red:hover { background: #fff5f5; }
+        .btn-green { color: #155724; border-color: #c3e6cb; }
+        .btn-green:hover { background: #f0fff0; }
+        .btn-primary {
+            background: #d32f2f; color: white; border: none; padding: 10px 20px;
+            border-radius: 980px; font-size: 14px; font-weight: 500; cursor: pointer;
+        }
+        .btn-primary:hover { background: #c62828; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.35); z-index: 50; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #fff; border-radius: 16px; padding: 28px; max-width: 420px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .modal h3 { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+        .modal label { display: block; font-size: 13px; font-weight: 500; color: #6e6e73; margin-bottom: 6px; }
+        .modal select, .modal input {
+            width: 100%; padding: 10px 14px; border: 1px solid #e8e8ed; border-radius: 10px;
+            font-size: 14px; font-family: inherit; margin-bottom: 12px; outline: none;
+        }
+        .modal-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+            background: #1d1d1f; color: white; border-radius: 10px;
+            font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s;
+            z-index: 100;
+        }
+        .toast.show { opacity: 1; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #86868b; }
+        .empty-state h3 { font-size: 18px; color: #1d1d1f; margin-bottom: 8px; }
+
+        @media (max-width: 768px) {
+            .stats { grid-template-columns: 1fr 1fr; }
+            .seller-card { flex-direction: column; align-items: flex-start; }
+            .seller-actions { margin-left: 0; margin-top: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+    <div class="login-wrap">
+        <h2>Zen Labs Admin</h2>
+        <p>Enter admin key to access the control panel</p>
+        <input type="password" id="adminKeyInput" placeholder="Admin key" onkeydown="if(event.key==='Enter')login()">
+        <br>
+        <button class="btn-primary" onclick="login()" style="width:100%">Sign In</button>
+    </div>
+</div>
+
+<!-- Main Panel -->
+<div id="mainPanel" style="display:none">
+    <div class="topbar">
+        <div class="topbar-left">
+            <span class="logo">Zen Labs</span>
+            <span class="logo-tag">Admin</span>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card"><div class="stat-value" id="s-sellers">—</div><div class="stat-label">Total Sellers</div></div>
+            <div class="stat-card"><div class="stat-value" id="s-customers">—</div><div class="stat-label">Total Customers</div></div>
+            <div class="stat-card"><div class="stat-value" id="s-orders">—</div><div class="stat-label">Total Orders</div></div>
+            <div class="stat-card"><div class="stat-value" id="s-pending">—</div><div class="stat-label">Pending Orders</div></div>
+            <div class="stat-card"><div class="stat-value" id="s-active">—</div><div class="stat-label">Active Sellers</div></div>
+            <div class="stat-card"><div class="stat-value" id="s-messages">—</div><div class="stat-label">Today's Messages</div></div>
+        </div>
+
+        <!-- Sellers List -->
+        <div class="section-title">Connected Pages</div>
+        <div class="seller-list" id="sellerList"></div>
+    </div>
+</div>
+
+<!-- Plan Modal -->
+<div class="modal-overlay" id="planModal">
+    <div class="modal">
+        <h3>Set Subscription Plan</h3>
+        <input type="hidden" id="planSellerId">
+        <div>
+            <label>Plan</label>
+            <select id="planSelect">
+                <option value="trial">Trial</option>
+                <option value="starter">Starter</option>
+                <option value="growth">Growth</option>
+                <option value="professional">Professional</option>
+            </select>
+        </div>
+        <div>
+            <label>Duration (days)</label>
+            <input type="number" id="planDays" value="30" min="1">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="savePlan()">Save</button>
+            <button class="btn" onclick="closePlanModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let ADMIN_KEY = '';
+const API = '/api/admin';
+
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function login() {
+    ADMIN_KEY = document.getElementById('adminKeyInput').value.trim();
+    if (!ADMIN_KEY) return;
+    loadDashboard().then(() => {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainPanel').style.display = 'block';
+    }).catch(() => {
+        toast('Invalid admin key');
+    });
+}
+
+async function apiFetch(path) {
+    const sep = path.includes('?') ? '&' : '?';
+    const res = await fetch(API + path + sep + 'key=' + encodeURIComponent(ADMIN_KEY));
+    if (res.status === 403) throw new Error('Forbidden');
+    return res.json();
+}
+
+async function apiPost(path) {
+    const sep = path.includes('?') ? '&' : '?';
+    const res = await fetch(API + path + sep + 'key=' + encodeURIComponent(ADMIN_KEY), { method: 'POST' });
+    return res.json();
+}
+
+async function apiDelete(path) {
+    const sep = path.includes('?') ? '&' : '?';
+    const res = await fetch(API + path + sep + 'key=' + encodeURIComponent(ADMIN_KEY), { method: 'DELETE' });
+    return res.json();
+}
+
+async function loadDashboard() {
+    const data = await apiFetch('/dashboard');
+    const s = data.stats;
+    document.getElementById('s-sellers').textContent = s.total_sellers;
+    document.getElementById('s-customers').textContent = s.total_customers;
+    document.getElementById('s-orders').textContent = s.total_orders;
+    document.getElementById('s-pending').textContent = s.pending_orders;
+    document.getElementById('s-active').textContent = s.active_sellers;
+    document.getElementById('s-messages').textContent = s.today_messages;
+    await loadSellers();
+}
+
+async function loadSellers() {
+    const sellers = await apiFetch('/sellers');
+    const list = document.getElementById('sellerList');
+
+    if (!sellers.length) {
+        list.innerHTML = '<div class="empty-state"><h3>No sellers yet</h3><p>Sellers will appear here once they onboard via the connect flow.</p></div>';
+        return;
+    }
+
+    list.innerHTML = sellers.map(s => {
+        const now = new Date();
+        const expires = s.plan_expires_at ? new Date(s.plan_expires_at) : null;
+        const isExpired = expires && expires < now;
+        const daysLeft = expires ? Math.ceil((expires - now) / (1000 * 60 * 60 * 24)) : null;
+
+        let planBadge = '';
+        if (s.plan === 'trial') {
+            planBadge = isExpired
+                ? '<span class="badge badge-expired">Trial Expired</span>'
+                : `<span class="badge badge-trial">Trial (${daysLeft}d left)</span>`;
+        } else {
+            planBadge = isExpired
+                ? '<span class="badge badge-expired">' + s.plan + ' Expired</span>'
+                : `<span class="badge badge-paid">${s.plan} (${daysLeft}d left)</span>`;
+        }
+
+        const statusBadge = s.is_active
+            ? '<span class="badge badge-active">Active</span>'
+            : '<span class="badge badge-inactive">Blocked</span>';
+
+        const pausedBadge = s.bot_paused
+            ? ' <span class="badge badge-paused">Bot Paused</span>'
+            : '';
+
+        return `
+        <div class="seller-card">
+            <div class="seller-info">
+                <div class="seller-name">${s.fb_page_name || 'Unnamed Page'}</div>
+                <div style="display:flex;gap:6px;margin:6px 0;flex-wrap:wrap">
+                    ${statusBadge} ${planBadge}${pausedBadge}
+                </div>
+                <div class="seller-meta">
+                    <span>${s.products} products</span>
+                    <span>${s.customers} customers</span>
+                    <span>${s.orders} orders</span>
+                    <span>Since ${s.created_at ? new Date(s.created_at).toLocaleDateString() : '—'}</span>
+                </div>
+            </div>
+            <div class="seller-actions">
+                <button class="btn" onclick="openPlanModal('${s.id}', '${s.plan}')">Plan</button>
+                ${s.is_active
+                    ? `<button class="btn btn-red" onclick="toggleActive('${s.id}', false)">Block</button>`
+                    : `<button class="btn btn-green" onclick="toggleActive('${s.id}', true)">Unblock</button>`
+                }
+                <button class="btn" onclick="openDashboard('${s.id}')">Dashboard</button>
+                <button class="btn btn-red" onclick="deleteSeller('${s.id}', '${(s.fb_page_name || '').replace(/'/g, '')}')">Delete</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function toggleActive(sellerId, activate) {
+    const action = activate ? 'activate' : 'deactivate';
+    const data = await apiPost('/sellers/' + sellerId + '/' + action);
+    toast(data.message);
+    await loadSellers();
+}
+
+function openPlanModal(sellerId, currentPlan) {
+    document.getElementById('planSellerId').value = sellerId;
+    document.getElementById('planSelect').value = currentPlan;
+    document.getElementById('planDays').value = 30;
+    document.getElementById('planModal').classList.add('show');
+}
+function closePlanModal() { document.getElementById('planModal').classList.remove('show'); }
+
+async function savePlan() {
+    const sellerId = document.getElementById('planSellerId').value;
+    const plan = document.getElementById('planSelect').value;
+    const days = document.getElementById('planDays').value;
+    const data = await apiPost('/sellers/' + sellerId + '/set-plan?plan=' + plan + '&days=' + days);
+    toast(data.message);
+    closePlanModal();
+    await loadSellers();
+}
+
+async function deleteSeller(sellerId, name) {
+    if (!confirm('Permanently delete "' + name + '" and all their data? This cannot be undone.')) return;
+    const data = await apiDelete('/sellers/' + sellerId);
+    toast(data.message);
+    await loadDashboard();
+}
+
+function openDashboard(sellerId) {
+    window.open('/dashboard?seller_id=' + sellerId, '_blank');
+}
+</script>
+</body>
+</html>

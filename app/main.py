@@ -14,6 +14,7 @@ from app.services.page_scraper import refresh_all_sellers
 from app.routes.webhook import router as webhook_router
 from app.routes.seller import router as seller_router
 from app.routes.auth import router as auth_router
+from app.routes.admin import router as admin_router
 
 # Create tables on first import (serverless cold start)
 Base.metadata.create_all(bind=engine)
@@ -29,6 +30,7 @@ try:
             ('bot_name', 'VARCHAR'),
             ('custom_instructions', 'TEXT'),
             ('learned_knowledge', 'TEXT'),
+            ('bot_paused', 'BOOLEAN DEFAULT FALSE'),
         ]:
             if col_name not in seller_columns:
                 conn.execute(text(f"ALTER TABLE sellers ADD COLUMN {col_name} {col_type}"))
@@ -64,6 +66,7 @@ if os.path.exists(static_dir):
 app.include_router(webhook_router)
 app.include_router(seller_router)
 app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 @app.get("/")
@@ -95,6 +98,14 @@ async def dashboard():
     if os.path.exists(dash_file):
         return FileResponse(dash_file)
     return {"error": "Dashboard not found"}
+
+
+@app.get("/admin")
+async def admin():
+    admin_file = os.path.join(os.path.dirname(__file__), "static", "admin.html")
+    if os.path.exists(admin_file):
+        return FileResponse(admin_file)
+    return {"error": "Admin panel not found"}
 
 
 @app.get("/health")
