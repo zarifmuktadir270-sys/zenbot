@@ -3,167 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard — ZenBot</title>
+    <title>Dashboard - ZenBot</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600&display=swap');
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: #f5f5f7; color: #1d1d1f; -webkit-font-smoothing: antialiased; }
-
-        /* PIN Lock */
-        .pin-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .pin-box { text-align: center; max-width: 340px; width: 90%; }
-        .pin-box h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-        .pin-box p { font-size: 13px; color: #86868b; margin-bottom: 20px; }
-        .pin-box input { width: 100%; padding: 12px 16px; border: 1px solid #e8e8ed; border-radius: 10px; font-size: 16px; text-align: center; letter-spacing: 8px; outline: none; margin-bottom: 12px; }
-        .pin-box input:focus { border-color: #d32f2f; }
-        .pin-error { color: #d32f2f; font-size: 12px; display: none; margin-bottom: 8px; }
-
-        /* Topbar */
-        .topbar { background: #fff; border-bottom: 1px solid #e8e8ed; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; height: 52px; }
-        .topbar-left { display: flex; align-items: center; gap: 12px; }
-        .logo { font-size: 16px; font-weight: 700; color: #1d1d1f; text-decoration: none; letter-spacing: -0.5px; }
-        .shop-badge { font-size: 12px; color: #86868b; font-weight: 500; padding: 2px 8px; background: #f5f5f7; border-radius: 6px; }
-        .bot-status { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 980px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; }
-        .bot-status.on { background: #dcfce7; color: #166534; }
-        .bot-status.off { background: #fee2e2; color: #991b1b; }
-        .bot-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-        .topbar-right { display: flex; align-items: center; gap: 8px; }
-        .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e8e8ed; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.15s; }
-        .btn-icon:hover { background: #f5f5f7; }
-
-        /* Sidebar + Content */
-        .app-shell { display: flex; min-height: calc(100vh - 52px); }
-        .sidebar { width: 200px; background: #fff; border-right: 1px solid #e8e8ed; padding: 16px 0; flex-shrink: 0; }
-        .nav-item { display: block; padding: 9px 20px; font-size: 13px; font-weight: 500; color: #6e6e73; cursor: pointer; transition: all 0.12s; border: none; background: none; width: 100%; text-align: left; }
-        .nav-item:hover { color: #1d1d1f; background: #f5f5f7; }
-        .nav-item.active { color: #d32f2f; background: #fef2f2; font-weight: 600; }
-        .nav-sep { height: 1px; background: #e8e8ed; margin: 8px 16px; }
-
-        .content { flex: 1; padding: 28px 32px; max-width: 960px; }
-
-        /* Cards */
-        .card { background: #fff; border-radius: 14px; border: 1px solid #e8e8ed; padding: 22px; margin-bottom: 14px; }
-        .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-        .card-title { font-size: 13px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.04em; }
-
-        /* Stats */
-        .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat { background: #fff; border-radius: 12px; border: 1px solid #e8e8ed; padding: 16px; }
-        .stat-val { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
-        .stat-lbl { font-size: 11px; color: #86868b; margin-top: 2px; font-weight: 500; }
-
-        /* Plan banner */
-        .plan-banner { background: linear-gradient(135deg, #1d1d1f, #3d3d3f); color: #fff; border-radius: 14px; padding: 18px 22px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
-        .plan-banner .plan-name { font-size: 14px; font-weight: 600; }
-        .plan-banner .plan-exp { font-size: 12px; opacity: 0.7; margin-top: 2px; }
-        .plan-banner .plan-tag { padding: 4px 12px; border-radius: 980px; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.15); }
-
-        /* Form */
-        .field { margin-bottom: 14px; }
-        .field label { display: block; font-size: 12px; font-weight: 600; color: #6e6e73; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.03em; }
-        .field input, .field textarea, .field select { width: 100%; padding: 9px 12px; border: 1px solid #e8e8ed; border-radius: 8px; font-size: 13px; font-family: inherit; color: #1d1d1f; background: #fbfbfd; outline: none; transition: border 0.15s; }
-        .field input:focus, .field textarea:focus { border-color: #d32f2f; }
-        .field textarea { resize: vertical; min-height: 70px; }
-        .field-hint { font-size: 11px; color: #86868b; margin-top: 3px; }
-
-        .btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.12s; }
-        .btn-primary { background: #d32f2f; color: white; }
-        .btn-primary:hover { background: #b71c1c; }
-        .btn-secondary { background: #f5f5f7; color: #1d1d1f; border: 1px solid #e8e8ed; }
-        .btn-secondary:hover { background: #e8e8ed; }
-        .btn-danger { background: #fff; color: #d32f2f; border: 1px solid #ffcdd2; }
-        .btn-danger:hover { background: #fef2f2; }
-        .btn-sm { padding: 5px 12px; font-size: 11px; border-radius: 6px; }
-        .btn-row { display: flex; gap: 8px; margin-top: 14px; }
-
-        /* Table */
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { text-align: left; padding: 8px 10px; color: #86868b; font-weight: 600; border-bottom: 1px solid #e8e8ed; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
-        td { padding: 10px; border-bottom: 1px solid #f0f0f2; }
-        tr:hover td { background: #fafafa; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 980px; font-size: 10px; font-weight: 600; }
-        .badge-pending { background: #fff3cd; color: #856404; }
-        .badge-confirmed { background: #d4edda; color: #155724; }
-        .badge-shipped { background: #cce5ff; color: #004085; }
-        .badge-delivered { background: #d4edda; color: #155724; }
-        .badge-cancelled { background: #f8d7da; color: #721c24; }
-
-        /* Product/Media grid */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-        .grid-item { background: #fff; border: 1px solid #e8e8ed; border-radius: 10px; padding: 14px; }
-        .grid-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; background: #e8e8ed; }
-        .grid-item-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-        .grid-item-meta { font-size: 11px; color: #86868b; }
-        .grid-item-actions { display: flex; gap: 4px; margin-top: 8px; }
-
-        /* Chat viewer */
-        .chat-list { max-height: 300px; overflow-y: auto; }
-        .chat-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f5f5f7; transition: background 0.1s; }
-        .chat-item:hover { background: #f5f5f7; }
-        .chat-item.active { background: #fef2f2; }
-        .chat-avatar { width: 32px; height: 32px; border-radius: 50%; background: #e8e8ed; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #6e6e73; flex-shrink: 0; }
-        .chat-preview { flex: 1; min-width: 0; }
-        .chat-name { font-size: 13px; font-weight: 600; }
-        .chat-last { font-size: 11px; color: #86868b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .chat-time { font-size: 10px; color: #86868b; flex-shrink: 0; }
-
-        .msg-area { max-height: 400px; overflow-y: auto; padding: 16px; background: #f5f5f7; border-radius: 10px; }
-        .msg-bubble { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 13px; margin-bottom: 6px; line-height: 1.4; font-family: 'Noto Sans Bengali', 'Inter', sans-serif; }
-        .msg-customer { background: #e8e8ed; color: #1d1d1f; margin-right: auto; border-bottom-left-radius: 4px; }
-        .msg-agent { background: #d32f2f; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
-        .msg-time { font-size: 9px; opacity: 0.6; margin-top: 2px; }
-
-        /* Knowledge */
-        .k-entry { padding: 8px 12px; background: #fbfbfd; border: 1px solid #e8e8ed; border-radius: 6px; margin-bottom: 6px; font-size: 13px; font-family: 'Noto Sans Bengali', 'Inter', sans-serif; display: flex; align-items: center; justify-content: space-between; }
-        .k-entry .del-k { cursor: pointer; color: #d32f2f; font-size: 16px; padding: 0 4px; opacity: 0.5; }
-        .k-entry .del-k:hover { opacity: 1; }
-
-        /* Activity */
-        .activity-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f7; font-size: 12px; }
-        .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-        .activity-dot.msg { background: #0071e3; }
-        .activity-dot.order { background: #34c759; }
-        .activity-text { flex: 1; color: #1d1d1f; }
-        .activity-time { color: #86868b; font-size: 11px; flex-shrink: 0; }
-
-        /* Personality */
-        .personality-opt { cursor: pointer; }
-        .personality-opt input { display: none; }
-        .personality-card { padding: 12px; border: 2px solid #e8e8ed; border-radius: 10px; transition: all 0.15s; }
-        .personality-opt input:checked + .personality-card { border-color: #d32f2f; background: #fef2f2; }
-        .personality-card:hover { border-color: #ccc; }
-
-        /* Upload */
-        .upload-zone { border: 2px dashed #e8e8ed; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.15s; }
-        .upload-zone:hover { border-color: #d32f2f; background: #fef2f2; }
-        .upload-zone.dragover { border-color: #d32f2f; background: #fef2f2; }
-
-        /* Toast */
-        .toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 18px; background: #1d1d1f; color: white; border-radius: 8px; font-size: 12px; font-weight: 500; opacity: 0; transition: opacity 0.2s; z-index: 100; }
-        .toast.show { opacity: 1; }
-
-        /* Modal */
-        .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 50; align-items: center; justify-content: center; }
-        .modal-bg.show { display: flex; }
-        .modal { background: #fff; border-radius: 14px; padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
-        .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
-
-        /* Panels */
-        .panel { display: none; }
-        .panel.active { display: block; }
-
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .content { padding: 16px; }
-            .grid { grid-template-columns: 1fr; }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f7;color:#1d1d1f;-webkit-font-smoothing:antialiased}
+        .pin-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+        .pin-box{text-align:center;max-width:340px;width:90%}
+        .pin-box h2{font-size:22px;font-weight:700;margin-bottom:6px}
+        .pin-box p{font-size:13px;color:#86868b;margin-bottom:20px}
+        .pin-box input{width:100%;padding:12px 16px;border:1px solid #e8e8ed;border-radius:10px;font-size:16px;text-align:center;letter-spacing:8px;outline:none;margin-bottom:12px}
+        .pin-box input:focus{border-color:#d32f2f}
+        .pin-error{color:#d32f2f;font-size:12px;display:none;margin-bottom:8px}
+        .topbar{background:#fff;border-bottom:1px solid #e8e8ed;padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;height:52px}
+        .topbar-left{display:flex;align-items:center;gap:12px}
+        .logo{font-size:16px;font-weight:700;color:#1d1d1f;text-decoration:none;letter-spacing:-0.5px}
+        .shop-badge{font-size:12px;color:#86868b;font-weight:500;padding:2px 8px;background:#f5f5f7;border-radius:6px}
+        .bot-status{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:980px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:none}
+        .bot-status.on{background:#dcfce7;color:#166534}.bot-status.off{background:#fee2e2;color:#991b1b}
+        .bot-status .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+        .topbar-right{display:flex;align-items:center;gap:8px}
+        .btn-icon{width:32px;height:32px;border-radius:8px;border:1px solid #e8e8ed;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+        .btn-icon:hover{background:#f5f5f7}
+        .app-shell{display:flex;min-height:calc(100vh - 52px)}
+        .sidebar{width:200px;background:#fff;border-right:1px solid #e8e8ed;padding:16px 0;flex-shrink:0;overflow-y:auto}
+        .nav-item{display:block;padding:9px 20px;font-size:13px;font-weight:500;color:#6e6e73;cursor:pointer;transition:all .12s;border:none;background:none;width:100%;text-align:left}
+        .nav-item:hover{color:#1d1d1f;background:#f5f5f7}
+        .nav-item.active{color:#d32f2f;background:#fef2f2;font-weight:600}
+        .nav-item.locked{opacity:0.5}
+        .nav-item .lock-tag{font-size:9px;background:#e8e8ed;padding:1px 5px;border-radius:4px;margin-left:4px;color:#86868b}
+        .nav-sep{height:1px;background:#e8e8ed;margin:8px 16px}
+        .content{flex:1;padding:28px 32px;max-width:960px}
+        .card{background:#fff;border-radius:14px;border:1px solid #e8e8ed;padding:22px;margin-bottom:14px}
+        .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+        .card-title{font-size:13px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.04em}
+        .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+        .stat{background:#fff;border-radius:12px;border:1px solid #e8e8ed;padding:16px}
+        .stat-val{font-size:26px;font-weight:700;letter-spacing:-.02em}
+        .stat-lbl{font-size:11px;color:#86868b;margin-top:2px;font-weight:500}
+        .plan-banner{background:linear-gradient(135deg,#1d1d1f,#3d3d3f);color:#fff;border-radius:14px;padding:18px 22px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+        .plan-banner .plan-name{font-size:14px;font-weight:600}
+        .plan-banner .plan-exp{font-size:12px;opacity:.7;margin-top:2px}
+        .plan-banner .plan-tag{padding:4px 12px;border-radius:980px;font-size:12px;font-weight:600;background:rgba(255,255,255,.15)}
+        .field{margin-bottom:14px}
+        .field label{display:block;font-size:12px;font-weight:600;color:#6e6e73;margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+        .field input,.field textarea,.field select{width:100%;padding:9px 12px;border:1px solid #e8e8ed;border-radius:8px;font-size:13px;font-family:inherit;color:#1d1d1f;background:#fbfbfd;outline:none;transition:border .15s}
+        .field input:focus,.field textarea:focus{border-color:#d32f2f}
+        .field textarea{resize:vertical;min-height:70px}
+        .field-hint{font-size:11px;color:#86868b;margin-top:3px}
+        .btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .12s}
+        .btn-primary{background:#d32f2f;color:white}.btn-primary:hover{background:#b71c1c}
+        .btn-secondary{background:#f5f5f7;color:#1d1d1f;border:1px solid #e8e8ed}.btn-secondary:hover{background:#e8e8ed}
+        .btn-danger{background:#fff;color:#d32f2f;border:1px solid #ffcdd2}.btn-danger:hover{background:#fef2f2}
+        .btn-sm{padding:5px 12px;font-size:11px;border-radius:6px}
+        .btn-row{display:flex;gap:8px;margin-top:14px}
+        .table-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        th{text-align:left;padding:8px 10px;color:#86868b;font-weight:600;border-bottom:1px solid #e8e8ed;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+        td{padding:10px;border-bottom:1px solid #f0f0f2}
+        tr:hover td{background:#fafafa}
+        .badge{display:inline-block;padding:2px 8px;border-radius:980px;font-size:10px;font-weight:600}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+        .grid-item{background:#fff;border:1px solid #e8e8ed;border-radius:10px;padding:14px}
+        .grid-item img{width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px;background:#e8e8ed}
+        .grid-item-name{font-size:13px;font-weight:600;margin-bottom:2px}
+        .grid-item-meta{font-size:11px;color:#86868b}
+        .grid-item-actions{display:flex;gap:4px;margin-top:8px}
+        .chat-list{max-height:300px;overflow-y:auto}
+        .chat-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f5f5f7;transition:background .1s}
+        .chat-item:hover{background:#f5f5f7}.chat-item.active{background:#fef2f2}
+        .chat-avatar{width:32px;height:32px;border-radius:50%;background:#e8e8ed;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#6e6e73;flex-shrink:0}
+        .chat-preview{flex:1;min-width:0}.chat-name{font-size:13px;font-weight:600}
+        .chat-last{font-size:11px;color:#86868b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .chat-time{font-size:10px;color:#86868b;flex-shrink:0}
+        .msg-area{max-height:400px;overflow-y:auto;padding:16px;background:#f5f5f7;border-radius:10px}
+        .msg-bubble{max-width:75%;padding:8px 12px;border-radius:12px;font-size:13px;margin-bottom:6px;line-height:1.4}
+        .msg-customer{background:#e8e8ed;color:#1d1d1f;margin-right:auto;border-bottom-left-radius:4px}
+        .msg-agent{background:#d32f2f;color:white;margin-left:auto;border-bottom-right-radius:4px}
+        .msg-seller{background:#1d1d1f;color:white;margin-left:auto;border-bottom-right-radius:4px}
+        .msg-time{font-size:9px;opacity:.6;margin-top:2px}
+        .activity-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f7;font-size:12px}
+        .activity-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+        .activity-dot.msg{background:#0071e3}.activity-dot.order{background:#34c759}
+        .activity-text{flex:1;color:#1d1d1f}.activity-time{color:#86868b;font-size:11px;flex-shrink:0}
+        .personality-opt{cursor:pointer}.personality-opt input{display:none}
+        .personality-card{padding:12px;border:2px solid #e8e8ed;border-radius:10px;transition:all .15s}
+        .personality-opt input:checked + .personality-card{border-color:#d32f2f;background:#fef2f2}
+        .personality-card:hover{border-color:#ccc}
+        .upload-zone{border:2px dashed #e8e8ed;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .15s}
+        .upload-zone:hover,.upload-zone.dragover{border-color:#d32f2f;background:#fef2f2}
+        .toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;background:#1d1d1f;color:white;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transition:opacity .2s;z-index:100}
+        .toast.show{opacity:1}
+        .modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.3);z-index:50;align-items:center;justify-content:center}
+        .modal-bg.show{display:flex}
+        .modal{background:#fff;border-radius:14px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+        .modal h3{font-size:16px;font-weight:600;margin-bottom:14px}
+        .panel{display:none}.panel.active{display:block}
+        .upgrade-banner{background:linear-gradient(135deg,#d32f2f,#ff6659);color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:13px;display:flex;align-items:center;justify-content:space-between}
+        .reply-bar{display:flex;gap:8px;margin-top:10px}
+        .reply-bar input{flex:1}
+        .chart-bar{display:flex;align-items:flex-end;gap:4px;height:120px;padding:10px 0}
+        .chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .chart-col .bar{width:100%;background:#d32f2f;border-radius:4px 4px 0 0;min-height:2px;transition:height .3s}
+        .chart-col .lbl{font-size:9px;color:#86868b}
+        @media(max-width:768px){.sidebar{display:none}.stats{grid-template-columns:repeat(2,1fr)}.content{padding:16px}.grid{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
-
-<!-- PIN Lock Screen -->
 <div class="pin-screen" id="pinScreen" style="display:none">
     <div class="pin-box">
         <h2>Dashboard Locked</h2>
@@ -174,15 +120,13 @@
     </div>
 </div>
 
-<!-- Main App -->
 <div id="mainApp" style="display:none">
     <div class="topbar">
         <div class="topbar-left">
             <a href="/" class="logo">ZenBot</a>
-            <span class="shop-badge" id="shopName">—</span>
+            <span class="shop-badge" id="shopName">-</span>
             <button class="bot-status on" id="botStatusBtn" onclick="toggleBot()">
-                <span class="dot"></span>
-                <span id="botStatusLabel">Active</span>
+                <span class="dot"></span><span id="botStatusLabel">Active</span>
             </button>
         </div>
         <div class="topbar-right">
@@ -190,9 +134,8 @@
             <a href="/" class="btn-icon" title="Home">H</a>
         </div>
     </div>
-
     <div class="app-shell">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebarNav">
             <button class="nav-item active" onclick="nav('overview')">Overview</button>
             <button class="nav-item" onclick="nav('orders')">Orders</button>
             <button class="nav-item" onclick="nav('customers')">Customers</button>
@@ -202,32 +145,29 @@
             <button class="nav-item" onclick="nav('media')">Media</button>
             <button class="nav-item" onclick="nav('knowledge')">Knowledge</button>
             <div class="nav-sep"></div>
+            <button class="nav-item" onclick="nav('analytics')" id="navAnalytics">Analytics<span class="lock-tag" id="lockAnalytics"></span></button>
+            <button class="nav-item" onclick="nav('coupons')" id="navCoupons">Coupons<span class="lock-tag" id="lockCoupons"></span></button>
+            <button class="nav-item" onclick="nav('broadcast')" id="navBroadcast">Broadcast<span class="lock-tag" id="lockBroadcast"></span></button>
+            <div class="nav-sep"></div>
             <button class="nav-item" onclick="nav('settings')">Settings</button>
             <button class="nav-item" onclick="nav('security')">Security</button>
         </div>
-
         <div class="content">
             <!-- Overview -->
             <div class="panel active" id="p-overview">
                 <div id="planBanner"></div>
                 <div class="card" id="botControlCard" style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px">
-                    <div>
-                        <div style="font-size:14px;font-weight:600" id="botControlLabel">AI Bot is Active</div>
-                        <div style="font-size:12px;color:#86868b;margin-top:2px">Pause or resume your AI assistant</div>
-                    </div>
+                    <div><div style="font-size:14px;font-weight:600" id="botControlLabel">AI Bot is Active</div><div style="font-size:12px;color:#86868b;margin-top:2px">Pause or resume your AI assistant</div></div>
                     <button class="btn" id="botToggleBtn" onclick="toggleBot()" style="min-width:120px;padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px">Pause AI</button>
                 </div>
                 <div class="stats">
-                    <div class="stat"><div class="stat-val" id="s-cust">—</div><div class="stat-lbl">Customers</div></div>
-                    <div class="stat"><div class="stat-val" id="s-orders">—</div><div class="stat-lbl">Orders</div></div>
-                    <div class="stat"><div class="stat-val" id="s-pending">—</div><div class="stat-lbl">Pending</div></div>
-                    <div class="stat"><div class="stat-val" id="s-msgs">—</div><div class="stat-lbl">Today Msgs</div></div>
-                    <div class="stat"><div class="stat-val" id="s-prods">—</div><div class="stat-lbl">Products</div></div>
+                    <div class="stat"><div class="stat-val" id="s-cust">-</div><div class="stat-lbl">Customers</div></div>
+                    <div class="stat"><div class="stat-val" id="s-orders">-</div><div class="stat-lbl">Orders</div></div>
+                    <div class="stat"><div class="stat-val" id="s-pending">-</div><div class="stat-lbl">Pending</div></div>
+                    <div class="stat"><div class="stat-val" id="s-msgs">-</div><div class="stat-lbl">Today Msgs</div></div>
+                    <div class="stat"><div class="stat-val" id="s-prods">-</div><div class="stat-lbl">Products</div></div>
                 </div>
-                <div class="card">
-                    <div class="card-head"><div class="card-title">Recent Activity</div></div>
-                    <div id="activityFeed" style="max-height:320px;overflow-y:auto"></div>
-                </div>
+                <div class="card"><div class="card-head"><div class="card-title">Recent Activity</div></div><div id="activityFeed" style="max-height:320px;overflow-y:auto"></div></div>
             </div>
 
             <!-- Orders -->
@@ -238,13 +178,12 @@
                         <button class="btn btn-sm btn-secondary orderFilter" onclick="filterOrders('pending')">Pending</button>
                         <button class="btn btn-sm btn-secondary orderFilter" onclick="filterOrders('confirmed')">Confirmed</button>
                         <button class="btn btn-sm btn-secondary orderFilter" onclick="filterOrders('shipped')">Shipped</button>
+                        <button class="btn btn-sm btn-primary" onclick="exportCSV()" id="btnExport">Export CSV</button>
                     </div>
                 </div>
                 <div class="card"><div class="table-wrap">
-                    <table>
-                        <thead><tr><th>ID</th><th>Customer</th><th>Phone</th><th>Address</th><th>Items</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
-                        <tbody id="orderTable"></tbody>
-                    </table>
+                    <table><thead><tr><th>ID</th><th>Customer</th><th>Phone</th><th>Items</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody id="orderTable"></tbody></table>
                 </div></div>
             </div>
 
@@ -252,10 +191,8 @@
             <div class="panel" id="p-customers">
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Customers</div></div>
                 <div class="card"><div class="table-wrap">
-                    <table>
-                        <thead><tr><th>Name</th><th>Phone</th><th>Orders</th><th>Messages</th><th>Last Active</th></tr></thead>
-                        <tbody id="customerTable"></tbody>
-                    </table>
+                    <table><thead><tr><th>Name</th><th>Phone</th><th>Tags</th><th>Orders</th><th>Messages</th><th>Last Active</th></tr></thead>
+                    <tbody id="customerTable"></tbody></table>
                 </div></div>
             </div>
 
@@ -263,15 +200,13 @@
             <div class="panel" id="p-conversations">
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Conversations</div></div>
                 <div style="display:grid;grid-template-columns:260px 1fr;gap:14px;">
-                    <div class="card" style="padding:0;overflow:hidden">
-                        <div class="chat-list" id="chatList">
-                            <div style="padding:16px;color:#86868b;font-size:12px;text-align:center">Select a customer</div>
-                        </div>
-                    </div>
+                    <div class="card" style="padding:0;overflow:hidden"><div class="chat-list" id="chatList"><div style="padding:16px;color:#86868b;font-size:12px;text-align:center">Select a customer</div></div></div>
                     <div class="card">
                         <div id="chatHeader" style="font-size:14px;font-weight:600;margin-bottom:10px;color:#86868b">Select a conversation</div>
-                        <div class="msg-area" id="msgArea">
-                            <div style="text-align:center;color:#86868b;font-size:12px;padding:40px 0">No conversation selected</div>
+                        <div class="msg-area" id="msgArea"><div style="text-align:center;color:#86868b;font-size:12px;padding:40px 0">No conversation selected</div></div>
+                        <div class="reply-bar" id="replyBar" style="display:none">
+                            <input type="text" id="replyInput" placeholder="Type a reply..." onkeydown="if(event.key==='Enter')sendReply()">
+                            <button class="btn btn-sm btn-primary" onclick="sendReply()">Send</button>
                         </div>
                     </div>
                 </div>
@@ -279,12 +214,8 @@
 
             <!-- Products -->
             <div class="panel" id="p-products">
-                <div class="card-head">
-                    <div class="card-title" style="font-size:16px;color:#1d1d1f">Products</div>
-                    <div class="btn-row" style="margin:0">
-                        <button class="btn btn-sm btn-primary" onclick="showModal('addProdModal')">Add Product</button>
-                        <button class="btn btn-sm btn-secondary" onclick="refreshProducts()">Sync Facebook</button>
-                    </div>
+                <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Products</div>
+                    <div class="btn-row" style="margin:0"><button class="btn btn-sm btn-primary" onclick="showModal('addProdModal')">Add Product</button><button class="btn btn-sm btn-secondary" onclick="refreshProducts()">Sync Facebook</button></div>
                 </div>
                 <div class="grid" id="productGrid"></div>
             </div>
@@ -294,10 +225,7 @@
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Media Files</div></div>
                 <div class="card">
                     <div class="card-title" style="margin-bottom:10px">Upload File</div>
-                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
-                         ondragover="event.preventDefault();this.classList.add('dragover')"
-                         ondragleave="this.classList.remove('dragover')"
-                         ondrop="event.preventDefault();this.classList.remove('dragover');handleDrop(event)">
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');handleDrop(event)">
                         <div style="font-size:24px;color:#ccc;margin-bottom:6px">+</div>
                         <div style="font-size:13px;color:#6e6e73;font-weight:500">Click or drag file here</div>
                         <div style="font-size:11px;color:#86868b;margin-top:4px">Images and videos, max 5MB</div>
@@ -306,13 +234,10 @@
                     <div id="uploadPreview" style="display:none;margin-top:10px">
                         <img id="previewImg" style="max-height:100px;border-radius:6px;margin-bottom:8px">
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                            <div class="field"><label>Name</label><input type="text" id="mediaName" placeholder="Size chart, product photo..."></div>
+                            <div class="field"><label>Name</label><input type="text" id="mediaName" placeholder="Size chart..."></div>
                             <div class="field"><label>Tags</label><input type="text" id="mediaTags" placeholder="size, chart"></div>
                         </div>
-                        <div class="btn-row">
-                            <button class="btn btn-sm btn-primary" onclick="uploadFile()">Upload</button>
-                            <button class="btn btn-sm btn-secondary" onclick="cancelUpload()">Cancel</button>
-                        </div>
+                        <div class="btn-row"><button class="btn btn-sm btn-primary" onclick="uploadFile()">Upload</button><button class="btn btn-sm btn-secondary" onclick="cancelUpload()">Cancel</button></div>
                     </div>
                 </div>
                 <div class="grid" id="mediaGrid" style="margin-top:14px"></div>
@@ -322,116 +247,86 @@
             <div class="panel" id="p-knowledge">
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Knowledge Base</div></div>
                 <div class="card">
-                    <p style="font-size:12px;color:#86868b;margin-bottom:10px">Teach the bot facts it should remember. It will use these when answering customers.</p>
+                    <p style="font-size:12px;color:#86868b;margin-bottom:10px">Teach the bot facts it should remember.</p>
                     <div class="field"><textarea id="newKnowledge" rows="2" placeholder="e.g. Red dress is out of stock / Eid discount 15%"></textarea></div>
                     <button class="btn btn-sm btn-primary" onclick="addKnowledge()">Add Knowledge</button>
                 </div>
-                <div class="card" style="margin-top:14px">
-                    <div class="card-head"><div class="card-title">Stored Knowledge</div><button class="btn btn-sm btn-danger" onclick="clearKnowledge()">Clear All</button></div>
-                    <div id="knowledgeList"></div>
+                <div class="card" style="margin-top:14px"><div class="card-head"><div class="card-title">Stored Knowledge</div><button class="btn btn-sm btn-danger" onclick="clearKnowledge()">Clear All</button></div><div id="knowledgeList"></div></div>
+            </div>
+
+            <!-- Analytics (Growth+) -->
+            <div class="panel" id="p-analytics">
+                <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Analytics</div></div>
+                <div id="analyticsContent"></div>
+            </div>
+
+            <!-- Coupons (Growth+) -->
+            <div class="panel" id="p-coupons">
+                <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Coupons</div></div>
+                <div class="card" id="couponForm">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                        <div class="field"><label>Code</label><input type="text" id="couponCode" placeholder="EID20"></div>
+                        <div class="field"><label>Type</label><select id="couponType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (BDT)</option></select></div>
+                        <div class="field"><label>Value</label><input type="number" id="couponValue" placeholder="20"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <div class="field"><label>Min Order (BDT)</label><input type="number" id="couponMin" value="0"></div>
+                        <div class="field"><label>Max Uses (-1=unlimited)</label><input type="number" id="couponMax" value="-1"></div>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="createCoupon()">Create Coupon</button>
+                </div>
+                <div class="card" style="margin-top:14px"><div class="table-wrap"><table><thead><tr><th>Code</th><th>Discount</th><th>Min Order</th><th>Used</th><th>Status</th><th></th></tr></thead><tbody id="couponTable"></tbody></table></div></div>
+            </div>
+
+            <!-- Broadcast (Growth+) -->
+            <div class="panel" id="p-broadcast">
+                <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Broadcast Message</div></div>
+                <div class="card">
+                    <p style="font-size:12px;color:#86868b;margin-bottom:12px">Send a message to ALL your customers at once. Use for announcements, sales, new products.</p>
+                    <div class="field"><textarea id="broadcastMsg" rows="3" placeholder="Write your broadcast message here..."></textarea></div>
+                    <div class="btn-row"><button class="btn btn-primary" onclick="sendBroadcast()">Send Broadcast</button></div>
+                    <div id="broadcastResult" style="margin-top:10px;font-size:12px"></div>
                 </div>
             </div>
 
             <!-- Settings -->
             <div class="panel" id="p-settings">
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Bot Settings</div></div>
+                <div class="card"><div class="card-title">Identity</div><div class="field"><label>Bot Name</label><input type="text" id="botName" placeholder="AI Assistant"><div class="field-hint">How the bot introduces itself</div></div></div>
                 <div class="card">
-                    <div class="card-title">Identity</div>
-                    <div class="field"><label>Bot Name</label><input type="text" id="botName" placeholder="AI Assistant"><div class="field-hint">How the bot introduces itself</div></div>
+                    <div class="card-title">Welcome Message</div>
+                    <p style="font-size:12px;color:#86868b;margin-bottom:8px">Auto-sent to new customers on their first message</p>
+                    <div class="field"><textarea id="welcomeMsg" rows="2" placeholder="Hi! Welcome to our shop. How can I help you today?"></textarea></div>
                 </div>
-                <div class="card">
-                    <div class="card-title">AI Personality</div>
-                    <p style="font-size:12px;color:#86868b;margin-bottom:10px">Choose how your AI talks to customers</p>
+                <div class="card"><div class="card-title">AI Personality</div><p style="font-size:12px;color:#86868b;margin-bottom:10px">Choose how your AI talks to customers</p>
                     <div id="personalityGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                        <label class="personality-opt" data-val="friendly">
-                            <input type="radio" name="personality" value="friendly" checked>
-                            <div class="personality-card">
-                                <div style="font-size:13px;font-weight:600">Friendly</div>
-                                <div style="font-size:11px;color:#86868b">Warm and approachable, like a local shop friend</div>
-                            </div>
-                        </label>
-                        <label class="personality-opt" data-val="professional">
-                            <input type="radio" name="personality" value="professional">
-                            <div class="personality-card">
-                                <div style="font-size:13px;font-weight:600">Professional</div>
-                                <div style="font-size:11px;color:#86868b">Polite, business-like, respectful</div>
-                            </div>
-                        </label>
-                        <label class="personality-opt" data-val="casual">
-                            <input type="radio" name="personality" value="casual">
-                            <div class="personality-card">
-                                <div style="font-size:13px;font-weight:600">Casual</div>
-                                <div style="font-size:11px;color:#86868b">Relaxed and chill, like texting a buddy</div>
-                            </div>
-                        </label>
-                        <label class="personality-opt" data-val="funny">
-                            <input type="radio" name="personality" value="funny">
-                            <div class="personality-card">
-                                <div style="font-size:13px;font-weight:600">Funny</div>
-                                <div style="font-size:11px;color:#86868b">Witty and humorous, keeps it light</div>
-                            </div>
-                        </label>
+                        <label class="personality-opt"><input type="radio" name="personality" value="friendly" checked><div class="personality-card"><div style="font-size:13px;font-weight:600">Friendly</div><div style="font-size:11px;color:#86868b">Warm and approachable</div></div></label>
+                        <label class="personality-opt"><input type="radio" name="personality" value="professional"><div class="personality-card"><div style="font-size:13px;font-weight:600">Professional</div><div style="font-size:11px;color:#86868b">Polite and business-like</div></div></label>
+                        <label class="personality-opt"><input type="radio" name="personality" value="casual"><div class="personality-card"><div style="font-size:13px;font-weight:600">Casual</div><div style="font-size:11px;color:#86868b">Relaxed and chill</div></div></label>
+                        <label class="personality-opt"><input type="radio" name="personality" value="funny"><div class="personality-card"><div style="font-size:13px;font-weight:600">Funny</div><div style="font-size:11px;color:#86868b">Witty and humorous</div></div></label>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-title">Shop Information</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                        <div class="field"><label>Delivery Info</label><input type="text" id="deliveryInfo"></div>
-                        <div class="field"><label>Payment Methods</label><input type="text" id="paymentMethods"></div>
-                        <div class="field"><label>Delivery Time</label><input type="text" id="deliveryTime"></div>
-                        <div class="field"><label>Return Policy</label><input type="text" id="returnPolicy"></div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Custom Instructions</div>
-                    <div class="field"><textarea id="customInstructions" rows="4" placeholder="Rules for the bot: 'Always mention free delivery over 2000 BDT'"></textarea></div>
-                </div>
+                <div class="card"><div class="card-title">Shop Information</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Delivery Info</label><input type="text" id="deliveryInfo"></div><div class="field"><label>Payment Methods</label><input type="text" id="paymentMethods"></div><div class="field"><label>Delivery Time</label><input type="text" id="deliveryTime"></div><div class="field"><label>Return Policy</label><input type="text" id="returnPolicy"></div></div></div>
+                <div class="card"><div class="card-title">Custom Instructions</div><div class="field"><textarea id="customInstructions" rows="4" placeholder="Rules for the bot..."></textarea></div></div>
                 <div class="btn-row"><button class="btn btn-primary" onclick="saveSettings()">Save Changes</button></div>
             </div>
 
             <!-- Security -->
             <div class="panel" id="p-security">
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Security</div></div>
-                <div class="card">
-                    <div class="card-title">Dashboard PIN</div>
-                    <p style="font-size:12px;color:#86868b;margin-bottom:12px">Set a PIN to lock your dashboard. Anyone with the dashboard URL will need this PIN to access it.</p>
-                    <div class="field"><label>New PIN (4-6 digits)</label><input type="password" id="newPin" maxlength="6" placeholder="Enter PIN"></div>
-                    <div class="btn-row">
-                        <button class="btn btn-sm btn-primary" onclick="setPin()">Set PIN</button>
-                        <button class="btn btn-sm btn-danger" onclick="removePin()">Remove PIN</button>
-                    </div>
-                    <div id="pinStatus" style="margin-top:8px;font-size:12px"></div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Account Info</div>
-                    <div style="font-size:13px;color:#6e6e73;">
-                        <div style="margin-bottom:6px"><b>Page ID:</b> <span id="secPageId">—</span></div>
-                        <div style="margin-bottom:6px"><b>Seller ID:</b> <span id="secSellerId">—</span></div>
-                        <div><b>Created:</b> <span id="secCreated">—</span></div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-title">Reconnect Facebook</div>
-                    <p style="font-size:12px;color:#86868b;margin-bottom:10px">If messages stopped working, reconnect your page.</p>
-                    <a href="/api/auth/facebook/login" target="_blank" class="btn btn-sm btn-secondary">Reconnect Page</a>
-                </div>
+                <div class="card"><div class="card-title">Dashboard PIN</div><p style="font-size:12px;color:#86868b;margin-bottom:12px">Set a PIN to lock your dashboard.</p><div class="field"><label>New PIN (4-6 digits)</label><input type="password" id="newPin" maxlength="6" placeholder="Enter PIN"></div><div class="btn-row"><button class="btn btn-sm btn-primary" onclick="setPin()">Set PIN</button><button class="btn btn-sm btn-danger" onclick="removePin()">Remove PIN</button></div><div id="pinStatus" style="margin-top:8px;font-size:12px"></div></div>
+                <div class="card"><div class="card-title">Account Info</div><div style="font-size:13px;color:#6e6e73"><div style="margin-bottom:6px"><b>Page ID:</b> <span id="secPageId">-</span></div><div style="margin-bottom:6px"><b>Seller ID:</b> <span id="secSellerId">-</span></div><div><b>Created:</b> <span id="secCreated">-</span></div></div></div>
+                <div class="card"><div class="card-title">Reconnect Facebook</div><p style="font-size:12px;color:#86868b;margin-bottom:10px">If messages stopped working, reconnect your page.</p><a href="/api/auth/facebook/login" target="_blank" class="btn btn-sm btn-secondary">Reconnect Page</a></div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Add Product Modal -->
-<div class="modal-bg" id="addProdModal">
-    <div class="modal">
-        <h3>Add Product</h3>
-        <div class="field"><label>Name</label><input type="text" id="prodName"></div>
-        <div class="field"><label>Price (BDT)</label><input type="number" id="prodPrice"></div>
-        <div class="field"><label>Stock (-1 = unlimited)</label><input type="number" id="prodStock" value="-1"></div>
-        <div class="field"><label>Description</label><textarea id="prodDesc" rows="2"></textarea></div>
-        <div class="field"><label>Image URL</label><input type="text" id="prodImage"></div>
-        <div class="btn-row"><button class="btn btn-primary" onclick="addProduct()">Add</button><button class="btn btn-secondary" onclick="closeModals()">Cancel</button></div>
-    </div>
-</div>
+<div class="modal-bg" id="addProdModal"><div class="modal"><h3>Add Product</h3><div class="field"><label>Name</label><input type="text" id="prodName"></div><div class="field"><label>Price (BDT)</label><input type="number" id="prodPrice"></div><div class="field"><label>Stock (-1=unlimited)</label><input type="number" id="prodStock" value="-1"></div><div class="field"><label>Category</label><input type="text" id="prodCategory" placeholder="e.g. Belts, Bags"></div><div class="field"><label>Description</label><textarea id="prodDesc" rows="2"></textarea></div><div class="field"><label>Image URL</label><input type="text" id="prodImage"></div><div class="btn-row"><button class="btn btn-primary" onclick="addProduct()">Add</button><button class="btn btn-secondary" onclick="closeModals()">Cancel</button></div></div></div>
+
+<!-- Audio notification -->
+<audio id="orderSound" preload="auto"><source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==" type="audio/wav"></audio>
 
 <div class="toast" id="toast"></div>
 
@@ -439,314 +334,208 @@
 const params = new URLSearchParams(location.search);
 const SID = params.get('seller_id') || '';
 const API = '/api/seller/' + SID;
-let SETTINGS = {};
+let SETTINGS = {}, PLAN_FEATURES = [], currentChatCustId = null;
 
-function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
-function showModal(id) { document.getElementById(id).classList.add('show'); }
-function closeModals() { document.querySelectorAll('.modal-bg').forEach(m => m.classList.remove('show')); }
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function showModal(id){document.getElementById(id).classList.add('show')}
+function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('show'))}
+function timeAgo(d){const s=Math.floor((Date.now()-d)/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
 
-function nav(name) {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+function nav(name){
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
     event.currentTarget.classList.add('active');
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('p-' + name).classList.add('active');
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('p-'+name).classList.add('active');
+    if(name==='analytics') loadAnalytics();
+    if(name==='coupons') loadCoupons();
 }
 
 // === PIN ===
-async function checkPin() {
-    const res = await fetch(API + '/verify-pin?pin=');
-    const d = await res.json();
-    if (d.has_pin) {
-        document.getElementById('pinScreen').style.display = 'flex';
-        document.getElementById('mainApp').style.display = 'none';
-    } else {
-        document.getElementById('pinScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        initDashboard();
-    }
-}
-
-async function verifyPin() {
-    const pin = document.getElementById('pinInput').value;
-    const res = await fetch(API + '/verify-pin?pin=' + encodeURIComponent(pin));
-    const d = await res.json();
-    if (d.valid) {
-        document.getElementById('pinScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        initDashboard();
-    } else {
-        document.getElementById('pinError').style.display = 'block';
-        document.getElementById('pinInput').value = '';
-    }
-}
-
-async function setPin() {
-    const pin = document.getElementById('newPin').value;
-    if (pin.length < 4) return toast('PIN must be 4-6 digits');
-    await fetch(API + '/set-pin?pin=' + encodeURIComponent(pin), { method: 'POST' });
-    toast('PIN set successfully');
-    document.getElementById('pinStatus').innerHTML = '<span style="color:#34c759">PIN is active</span>';
-    document.getElementById('newPin').value = '';
-}
-
-async function removePin() {
-    await fetch(API + '/set-pin?pin=', { method: 'POST' });
-    toast('PIN removed');
-    document.getElementById('pinStatus').innerHTML = '<span style="color:#86868b">No PIN set</span>';
-}
+async function checkPin(){const res=await fetch(API+'/verify-pin?pin=');const d=await res.json();if(d.has_pin){document.getElementById('pinScreen').style.display='flex';document.getElementById('mainApp').style.display='none'}else{document.getElementById('pinScreen').style.display='none';document.getElementById('mainApp').style.display='block';initDashboard()}}
+async function verifyPin(){const pin=document.getElementById('pinInput').value;const res=await fetch(API+'/verify-pin?pin='+encodeURIComponent(pin));const d=await res.json();if(d.valid){document.getElementById('pinScreen').style.display='none';document.getElementById('mainApp').style.display='block';initDashboard()}else{document.getElementById('pinError').style.display='block';document.getElementById('pinInput').value=''}}
+async function setPin(){const pin=document.getElementById('newPin').value;if(pin.length<4)return toast('PIN must be 4-6 digits');await fetch(API+'/set-pin?pin='+encodeURIComponent(pin),{method:'POST'});toast('PIN set');document.getElementById('pinStatus').innerHTML='<span style="color:#34c759">PIN is active</span>';document.getElementById('newPin').value=''}
+async function removePin(){await fetch(API+'/set-pin?pin=',{method:'POST'});toast('PIN removed');document.getElementById('pinStatus').innerHTML='<span style="color:#86868b">No PIN set</span>'}
 
 // === OVERVIEW ===
-async function loadDashboard() {
-    const res = await fetch(API + '/dashboard');
-    const d = await res.json();
-    document.getElementById('shopName').textContent = d.shop_name;
-    document.getElementById('s-cust').textContent = d.stats.total_customers;
-    document.getElementById('s-orders').textContent = d.stats.total_orders;
-    document.getElementById('s-pending').textContent = d.stats.pending_orders;
-    document.getElementById('s-msgs').textContent = d.stats.today_messages;
-    document.getElementById('s-prods').textContent = d.stats.total_products;
-}
+async function loadDashboard(){const res=await fetch(API+'/dashboard');const d=await res.json();document.getElementById('shopName').textContent=d.shop_name;document.getElementById('s-cust').textContent=d.stats.total_customers;document.getElementById('s-orders').textContent=d.stats.total_orders;document.getElementById('s-pending').textContent=d.stats.pending_orders;document.getElementById('s-msgs').textContent=d.stats.today_messages;document.getElementById('s-prods').textContent=d.stats.total_products}
 
-async function loadSettings() {
-    const res = await fetch(API + '/settings');
-    SETTINGS = await res.json();
-    const d = SETTINGS;
-    document.getElementById('shopName').textContent = d.fb_page_name;
-    document.getElementById('botName').value = d.bot_name || '';
-    document.getElementById('deliveryInfo').value = d.delivery_info || '';
-    document.getElementById('paymentMethods').value = d.payment_methods || '';
-    document.getElementById('deliveryTime').value = d.delivery_time || '';
-    document.getElementById('returnPolicy').value = d.return_policy || '';
-    document.getElementById('customInstructions').value = d.custom_instructions || '';
+async function loadSettings(){
+    const res=await fetch(API+'/settings');SETTINGS=await res.json();const d=SETTINGS;
+    document.getElementById('shopName').textContent=d.fb_page_name;
+    document.getElementById('botName').value=d.bot_name||'';
+    document.getElementById('welcomeMsg').value=d.welcome_message||'';
+    document.getElementById('deliveryInfo').value=d.delivery_info||'';
+    document.getElementById('paymentMethods').value=d.payment_methods||'';
+    document.getElementById('deliveryTime').value=d.delivery_time||'';
+    document.getElementById('returnPolicy').value=d.return_policy||'';
+    document.getElementById('customInstructions').value=d.custom_instructions||'';
     updateBotUI(d.bot_paused);
-    // Personality
-    const p = d.bot_personality || 'friendly';
-    const radio = document.querySelector(`input[name="personality"][value="${p}"]`);
-    if (radio) radio.checked = true;
-    // Plan banner
-    const exp = d.plan_expires_at ? new Date(d.plan_expires_at) : null;
-    const days = exp ? Math.max(0, Math.ceil((exp - new Date()) / 86400000)) : 0;
-    document.getElementById('planBanner').innerHTML = `<div class="plan-banner"><div><div class="plan-name">${d.plan.charAt(0).toUpperCase() + d.plan.slice(1)} Plan</div><div class="plan-exp">${days > 0 ? days + ' days remaining' : 'Expired'}</div></div><div class="plan-tag">${d.is_active ? 'Active' : 'Inactive'}</div></div>`;
-    // Security
-    document.getElementById('pinStatus').innerHTML = d.has_pin ? '<span style="color:#34c759">PIN is active</span>' : '<span style="color:#86868b">No PIN set</span>';
-    document.getElementById('secPageId').textContent = d.fb_page_id || '—';
-    document.getElementById('secSellerId').textContent = SID;
-    document.getElementById('secCreated').textContent = d.created_at ? new Date(d.created_at).toLocaleDateString() : '—';
-    // Knowledge
-    const kl = document.getElementById('knowledgeList');
-    kl.innerHTML = '';
-    if (d.learned_knowledge) {
-        d.learned_knowledge.split('\n').filter(Boolean).forEach(k => { kl.innerHTML += `<div class="k-entry"><span>${k}</span></div>`; });
-    } else { kl.innerHTML = '<p style="font-size:12px;color:#86868b">No knowledge yet</p>'; }
+    const p=d.bot_personality||'friendly';const radio=document.querySelector(`input[name="personality"][value="${p}"]`);if(radio)radio.checked=true;
+    const exp=d.plan_expires_at?new Date(d.plan_expires_at):null;const days=exp?Math.max(0,Math.ceil((exp-new Date())/86400000)):0;
+    document.getElementById('planBanner').innerHTML=`<div class="plan-banner"><div><div class="plan-name">${d.plan.charAt(0).toUpperCase()+d.plan.slice(1)} Plan</div><div class="plan-exp">${days>0?days+' days remaining':'Expired'}</div></div><div class="plan-tag">${d.is_active?'Active':'Inactive'}</div></div>`;
+    document.getElementById('pinStatus').innerHTML=d.has_pin?'<span style="color:#34c759">PIN is active</span>':'<span style="color:#86868b">No PIN set</span>';
+    document.getElementById('secPageId').textContent=d.fb_page_id||'-';
+    document.getElementById('secSellerId').textContent=SID;
+    document.getElementById('secCreated').textContent=d.created_at?new Date(d.created_at).toLocaleDateString():'-';
+    const kl=document.getElementById('knowledgeList');kl.innerHTML='';
+    if(d.learned_knowledge){d.learned_knowledge.split('\n').filter(Boolean).forEach(k=>{kl.innerHTML+=`<div style="padding:8px 12px;background:#fbfbfd;border:1px solid #e8e8ed;border-radius:6px;margin-bottom:6px;font-size:13px">${k}</div>`})}else{kl.innerHTML='<p style="font-size:12px;color:#86868b">No knowledge yet</p>'}
+    // Load plan features for gating
+    loadPlanInfo();
 }
 
-function updateBotUI(paused) {
-    const btn = document.getElementById('botStatusBtn');
-    const lbl = document.getElementById('botStatusLabel');
-    const toggleBtn = document.getElementById('botToggleBtn');
-    const controlLabel = document.getElementById('botControlLabel');
-    if (paused) {
-        btn.className = 'bot-status off'; lbl.textContent = 'Paused';
-        toggleBtn.textContent = 'Resume AI';
-        toggleBtn.style.background = '#34c759'; toggleBtn.style.color = '#fff';
-        controlLabel.textContent = 'AI Bot is Paused';
-        controlLabel.style.color = '#d32f2f';
-    } else {
-        btn.className = 'bot-status on'; lbl.textContent = 'Active';
-        toggleBtn.textContent = 'Pause AI';
-        toggleBtn.style.background = '#d32f2f'; toggleBtn.style.color = '#fff';
-        controlLabel.textContent = 'AI Bot is Active';
-        controlLabel.style.color = '#1d1d1f';
+async function loadPlanInfo(){
+    try{const res=await fetch(API+'/plan-info');const d=await res.json();PLAN_FEATURES=d.features;
+    // Show/hide lock tags
+    const locks={analytics:'analytics',coupons:'coupons',broadcast:'broadcast'};
+    for(const[nav,feat]of Object.entries(locks)){
+        const tag=document.getElementById('lock'+nav.charAt(0).toUpperCase()+nav.slice(1));
+        if(tag)tag.textContent=PLAN_FEATURES.includes(feat)?'':'PRO';
     }
+    if(!PLAN_FEATURES.includes('dashboard_reply'))document.getElementById('replyBar').style.display='none';
+    }catch(e){}
 }
 
-async function toggleBot() {
-    const res = await fetch(API + '/toggle-bot', { method: 'POST' });
-    const d = await res.json();
-    updateBotUI(d.bot_paused);
-    toast(d.message);
+function updateBotUI(paused){
+    const btn=document.getElementById('botStatusBtn'),lbl=document.getElementById('botStatusLabel');
+    const toggleBtn=document.getElementById('botToggleBtn'),controlLabel=document.getElementById('botControlLabel');
+    if(paused){btn.className='bot-status off';lbl.textContent='Paused';toggleBtn.textContent='Resume AI';toggleBtn.style.background='#34c759';toggleBtn.style.color='#fff';controlLabel.textContent='AI Bot is Paused';controlLabel.style.color='#d32f2f'}
+    else{btn.className='bot-status on';lbl.textContent='Active';toggleBtn.textContent='Pause AI';toggleBtn.style.background='#d32f2f';toggleBtn.style.color='#fff';controlLabel.textContent='AI Bot is Active';controlLabel.style.color='#1d1d1f'}
 }
+async function toggleBot(){const res=await fetch(API+'/toggle-bot',{method:'POST'});const d=await res.json();updateBotUI(d.bot_paused);toast(d.message)}
 
-async function loadActivity() {
-    const res = await fetch(API + '/activity');
-    const items = await res.json();
-    const el = document.getElementById('activityFeed');
-    if (!items.length) { el.innerHTML = '<p style="font-size:12px;color:#86868b;text-align:center;padding:20px">No activity yet</p>'; return; }
-    el.innerHTML = items.map(a => {
-        const t = new Date(a.time);
-        const ago = timeAgo(t);
-        return `<div class="activity-item"><div class="activity-dot ${a.type}"></div><div class="activity-text">${a.text}</div><div class="activity-time">${ago}</div></div>`;
-    }).join('');
-}
-
-function timeAgo(d) {
-    const s = Math.floor((Date.now() - d) / 1000);
-    if (s < 60) return 'just now';
-    if (s < 3600) return Math.floor(s/60) + 'm ago';
-    if (s < 86400) return Math.floor(s/3600) + 'h ago';
-    return Math.floor(s/86400) + 'd ago';
-}
+async function loadActivity(){const res=await fetch(API+'/activity');const items=await res.json();const el=document.getElementById('activityFeed');if(!items.length){el.innerHTML='<p style="font-size:12px;color:#86868b;text-align:center;padding:20px">No activity yet</p>';return}el.innerHTML=items.map(a=>`<div class="activity-item"><div class="activity-dot ${a.type}"></div><div class="activity-text">${a.text}</div><div class="activity-time">${timeAgo(new Date(a.time))}</div></div>`).join('')}
 
 // === SETTINGS ===
-async function saveSettings() {
-    const personality = document.querySelector('input[name="personality"]:checked')?.value || 'friendly';
-    await fetch(API + '/settings', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({
-        bot_name: document.getElementById('botName').value, bot_personality: personality,
-        delivery_info: document.getElementById('deliveryInfo').value,
-        payment_methods: document.getElementById('paymentMethods').value, delivery_time: document.getElementById('deliveryTime').value,
-        return_policy: document.getElementById('returnPolicy').value, custom_instructions: document.getElementById('customInstructions').value,
-    })});
-    toast('Settings saved');
+async function saveSettings(){
+    const personality=document.querySelector('input[name="personality"]:checked')?.value||'friendly';
+    await fetch(API+'/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        bot_name:document.getElementById('botName').value,bot_personality:personality,
+        welcome_message:document.getElementById('welcomeMsg').value,
+        delivery_info:document.getElementById('deliveryInfo').value,payment_methods:document.getElementById('paymentMethods').value,
+        delivery_time:document.getElementById('deliveryTime').value,return_policy:document.getElementById('returnPolicy').value,
+        custom_instructions:document.getElementById('customInstructions').value,
+    })});toast('Settings saved');
 }
 
 // === ORDERS ===
-let allOrders = [];
-async function loadOrders() {
-    const res = await fetch(API + '/orders');
-    allOrders = await res.json();
-    renderOrders(allOrders);
-}
-function filterOrders(status) {
-    document.querySelectorAll('.orderFilter').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-    renderOrders(status ? allOrders.filter(o => o.status === status) : allOrders);
-}
-function renderOrders(orders) {
-    document.getElementById('orderTable').innerHTML = orders.map(o => `<tr>
-        <td style="font-weight:600">#${o.id.slice(0,8)}</td><td>${o.customer_name||'—'}</td><td>${o.customer_phone||'—'}</td>
-        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.customer_address||''}">${o.customer_address||'—'}</td>
-        <td>${(o.items||[]).map(i=>i.product_name).join(', ')}</td><td>${o.payment_method||'—'}</td>
-        <td><select onchange="updateOrder('${o.id}',this.value)" style="font-size:11px;padding:3px 6px;border-radius:4px;border:1px solid #e8e8ed">
-            ${['pending','confirmed','shipped','delivered','cancelled'].map(s=>'<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+s+'</option>').join('')}
-        </select></td><td style="font-size:11px;color:#86868b">${new Date(o.created_at).toLocaleDateString()}</td></tr>`).join('')
-        || '<tr><td colspan="8" style="text-align:center;color:#86868b;padding:30px">No orders</td></tr>';
-}
-async function updateOrder(id, status) { await fetch(API+'/orders/'+id+'/status?status='+status,{method:'PUT'}); toast('Order: '+status); }
+let allOrders=[];
+async function loadOrders(){const res=await fetch(API+'/orders');allOrders=await res.json();renderOrders(allOrders)}
+function filterOrders(status){document.querySelectorAll('.orderFilter').forEach(b=>b.classList.remove('active'));event.currentTarget.classList.add('active');renderOrders(status?allOrders.filter(o=>o.status===status):allOrders)}
+function renderOrders(orders){document.getElementById('orderTable').innerHTML=orders.map(o=>`<tr><td style="font-weight:600">#${o.id.slice(0,8)}</td><td>${o.customer_name||'-'}</td><td>${o.customer_phone||'-'}</td><td>${(o.items||[]).map(i=>i.product_name).join(', ')}</td><td>${o.payment_method||'-'}</td><td><select onchange="updateOrder('${o.id}',this.value)" style="font-size:11px;padding:3px 6px;border-radius:4px;border:1px solid #e8e8ed">${['pending','confirmed','shipped','delivered','cancelled'].map(s=>'<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+s+'</option>').join('')}</select></td><td style="font-size:11px;color:#86868b">${new Date(o.created_at).toLocaleDateString()}</td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:#86868b;padding:30px">No orders</td></tr>'}
+async function updateOrder(id,status){await fetch(API+'/orders/'+id+'/status?status='+status,{method:'PUT'});toast('Order: '+status)}
+function exportCSV(){window.open(API+'/orders/export','_blank')}
 
 // === CUSTOMERS ===
-async function loadCustomers() {
-    const res = await fetch(API + '/customers');
-    const custs = await res.json();
-    document.getElementById('customerTable').innerHTML = custs.map(c => `<tr>
-        <td style="font-weight:600;cursor:pointer" onclick="openChat('${c.id}','${(c.name||'').replace(/'/g,'')}')">${c.name}</td>
-        <td>${c.phone||'—'}</td><td>${c.total_orders}</td><td>${c.total_messages}</td>
-        <td style="font-size:11px;color:#86868b">${c.last_active ? timeAgo(new Date(c.last_active)) : '—'}</td></tr>`).join('')
-        || '<tr><td colspan="5" style="text-align:center;color:#86868b;padding:30px">No customers yet</td></tr>';
-    // Also populate chat list
-    const cl = document.getElementById('chatList');
-    cl.innerHTML = custs.map(c => `<div class="chat-item" onclick="openChat('${c.id}','${(c.name||'').replace(/'/g,'')}')">
-        <div class="chat-avatar">${(c.name||'?')[0].toUpperCase()}</div>
-        <div class="chat-preview"><div class="chat-name">${c.name}</div><div class="chat-last">${c.total_messages} messages</div></div>
-        <div class="chat-time">${c.last_active ? timeAgo(new Date(c.last_active)) : ''}</div></div>`).join('')
-        || '<div style="padding:16px;color:#86868b;font-size:12px;text-align:center">No customers</div>';
+async function loadCustomers(){
+    const res=await fetch(API+'/customers');const custs=await res.json();
+    document.getElementById('customerTable').innerHTML=custs.map(c=>`<tr>
+        <td style="font-weight:600;cursor:pointer" onclick="openChat('${c.id}','${(c.name||'').replace(/'/g,'')}')">${c.name||'Unknown'}</td>
+        <td>${c.phone||'-'}</td><td><span style="font-size:10px;color:#86868b">${c.tags||'-'}</span></td>
+        <td>${c.total_orders}</td><td>${c.total_messages}</td>
+        <td style="font-size:11px;color:#86868b">${c.last_active?timeAgo(new Date(c.last_active)):'-'}</td></tr>`).join('')
+        ||'<tr><td colspan="6" style="text-align:center;color:#86868b;padding:30px">No customers yet</td></tr>';
+    const cl=document.getElementById('chatList');
+    cl.innerHTML=custs.map(c=>`<div class="chat-item" onclick="openChat('${c.id}','${(c.name||'').replace(/'/g,'')}')"><div class="chat-avatar">${(c.name||'?')[0].toUpperCase()}</div><div class="chat-preview"><div class="chat-name">${c.name||'Unknown'}</div><div class="chat-last">${c.total_messages} messages</div></div><div class="chat-time">${c.last_active?timeAgo(new Date(c.last_active)):''}</div></div>`).join('')||'<div style="padding:16px;color:#86868b;font-size:12px;text-align:center">No customers</div>';
 }
 
-async function openChat(custId, name) {
-    document.getElementById('chatHeader').textContent = name;
-    document.querySelectorAll('.chat-item').forEach(c => c.classList.remove('active'));
-    const res = await fetch(API + '/conversations/' + custId);
-    const msgs = await res.json();
-    const area = document.getElementById('msgArea');
-    area.innerHTML = msgs.map(m => {
-        const cls = m.sender === 'customer' ? 'msg-customer' : 'msg-agent';
-        const t = new Date(m.created_at);
-        return `<div style="display:flex;flex-direction:column;align-items:${m.sender==='customer'?'flex-start':'flex-end'}">
-            <div class="msg-bubble ${cls}">${m.message}</div>
-            <div class="msg-time">${t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div>`;
-    }).join('') || '<div style="text-align:center;color:#86868b;font-size:12px;padding:40px">No messages</div>';
-    area.scrollTop = area.scrollHeight;
-    // Switch to conversations panel
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+async function openChat(custId,name){
+    currentChatCustId=custId;
+    document.getElementById('chatHeader').textContent=name;
+    if(PLAN_FEATURES.includes('dashboard_reply'))document.getElementById('replyBar').style.display='flex';
+    const res=await fetch(API+'/conversations/'+custId);const msgs=await res.json();
+    const area=document.getElementById('msgArea');
+    area.innerHTML=msgs.map(m=>{const cls=m.sender==='customer'?'msg-customer':m.sender==='seller'?'msg-seller':'msg-agent';const t=new Date(m.created_at);return`<div style="display:flex;flex-direction:column;align-items:${m.sender==='customer'?'flex-start':'flex-end'}"><div class="msg-bubble ${cls}">${m.message}</div><div class="msg-time">${t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div>`}).join('')||'<div style="text-align:center;color:#86868b;font-size:12px;padding:40px">No messages</div>';
+    area.scrollTop=area.scrollHeight;
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     document.getElementById('p-conversations').classList.add('active');
 }
 
+async function sendReply(){
+    const msg=document.getElementById('replyInput').value.trim();if(!msg||!currentChatCustId)return;
+    const res=await fetch(API+'/customers/'+currentChatCustId+'/reply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
+    if(res.ok){document.getElementById('replyInput').value='';openChat(currentChatCustId,document.getElementById('chatHeader').textContent);toast('Reply sent')}
+    else{const d=await res.json();toast(d.detail||'Failed')}
+}
+
 // === PRODUCTS ===
-async function loadProducts() {
-    const res = await fetch(API + '/products');
-    const prods = await res.json();
-    document.getElementById('productGrid').innerHTML = prods.map(p => {
-        const stock = p.stock !== null && p.stock >= 0 ? (p.stock === 0 ? 'Out of stock' : p.stock + ' left') : 'Unlimited';
-        return `<div class="grid-item">${p.image_url ? '<img src="'+p.image_url+'">' : ''}
-            <div class="grid-item-name">${p.name}</div>
-            <div class="grid-item-meta">${p.price_text||(p.price?p.price+' BDT':'No price')} &middot; ${stock}</div>
-            <div class="grid-item-actions">
-                <button class="btn btn-sm btn-secondary" onclick="editStock('${p.id}',${p.stock??-1})">Stock</button>
-                <button class="btn btn-sm btn-secondary" onclick="toggleProd('${p.id}',${!p.is_available})">${p.is_available?'Hide':'Show'}</button>
-                <button class="btn btn-sm btn-danger" onclick="delProd('${p.id}')">Del</button>
-            </div></div>`;
-    }).join('') || '<p style="color:#86868b;font-size:12px">No products. Add manually or sync from Facebook.</p>';
-}
-async function addProduct() {
-    await fetch(API+'/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-        name:document.getElementById('prodName').value,price:parseFloat(document.getElementById('prodPrice').value)||null,
-        stock:parseInt(document.getElementById('prodStock').value)||-1,description:document.getElementById('prodDesc').value,
-        image_url:document.getElementById('prodImage').value})});
-    closeModals(); loadProducts(); toast('Product added');
-}
-async function toggleProd(id,avail) { await fetch(API+'/products/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_available:avail})}); loadProducts(); }
-async function delProd(id) { if(!confirm('Delete?'))return; await fetch(API+'/products/'+id,{method:'DELETE'}); loadProducts(); toast('Deleted'); }
-function editStock(id,cur) { const v=prompt('Stock (-1=unlimited, 0=out):',cur); if(v===null)return; fetch(API+'/products/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({stock:parseInt(v)})}).then(()=>{loadProducts();toast('Updated');}); }
-async function refreshProducts() { toast('Syncing...'); const r=await fetch(API+'/refresh-products',{method:'POST'}); const d=await r.json(); loadProducts(); toast(d.message); }
+async function loadProducts(){const res=await fetch(API+'/products');const prods=await res.json();document.getElementById('productGrid').innerHTML=prods.map(p=>{const stock=p.stock!==null&&p.stock>=0?(p.stock===0?'Out of stock':p.stock+' left'):'Unlimited';return`<div class="grid-item">${p.image_url?'<img src="'+p.image_url+'">':''}<div class="grid-item-name">${p.name}</div><div class="grid-item-meta">${p.price_text||(p.price?p.price+' BDT':'No price')} / ${stock}</div><div class="grid-item-actions"><button class="btn btn-sm btn-secondary" onclick="editStock('${p.id}',${p.stock??-1})">Stock</button><button class="btn btn-sm btn-secondary" onclick="toggleProd('${p.id}',${!p.is_available})">${p.is_available?'Hide':'Show'}</button><button class="btn btn-sm btn-danger" onclick="delProd('${p.id}')">Del</button></div></div>`}).join('')||'<p style="color:#86868b;font-size:12px">No products. Add manually or sync from Facebook.</p>'}
+async function addProduct(){await fetch(API+'/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('prodName').value,price:parseFloat(document.getElementById('prodPrice').value)||null,stock:parseInt(document.getElementById('prodStock').value)||-1,description:document.getElementById('prodDesc').value,image_url:document.getElementById('prodImage').value})});closeModals();loadProducts();toast('Product added')}
+async function toggleProd(id,avail){await fetch(API+'/products/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_available:avail})});loadProducts()}
+async function delProd(id){if(!confirm('Delete?'))return;await fetch(API+'/products/'+id,{method:'DELETE'});loadProducts();toast('Deleted')}
+function editStock(id,cur){const v=prompt('Stock (-1=unlimited, 0=out):',cur);if(v===null)return;fetch(API+'/products/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({stock:parseInt(v)})}).then(()=>{loadProducts();toast('Updated')})}
+async function refreshProducts(){toast('Syncing...');const r=await fetch(API+'/refresh-products',{method:'POST'});const d=await r.json();loadProducts();toast(d.message)}
 
 // === MEDIA ===
-let pendingFile = null;
-async function loadMedia() {
-    const res = await fetch(API+'/media'); const media = await res.json();
-    document.getElementById('mediaGrid').innerHTML = media.map(m => `<div class="grid-item">
-        ${m.media_type==='image'?'<img src="'+m.url+'">':''}<div class="grid-item-name">${m.name}</div>
-        <div class="grid-item-meta">${m.tags||'No tags'}</div>
-        <div class="grid-item-actions"><button class="btn btn-sm btn-danger" onclick="delMedia('${m.id}')">Delete</button></div></div>`).join('')
-        || '<p style="color:#86868b;font-size:12px">No media files yet.</p>';
-}
-function handleFileSelect(input) {
-    if (input.files && input.files[0]) prepareUpload(input.files[0]);
-}
-function handleDrop(e) {
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) prepareUpload(e.dataTransfer.files[0]);
-}
-function prepareUpload(file) {
-    if (file.size > 5*1024*1024) return toast('File too large (max 5MB)');
-    pendingFile = file;
-    document.getElementById('uploadPreview').style.display = 'block';
-    document.getElementById('mediaName').value = file.name.replace(/\.[^.]+$/, '');
-    if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = e => { document.getElementById('previewImg').src = e.target.result; document.getElementById('previewImg').style.display = 'block'; };
-        reader.readAsDataURL(file);
-    } else { document.getElementById('previewImg').style.display = 'none'; }
-}
-function cancelUpload() {
-    pendingFile = null;
-    document.getElementById('uploadPreview').style.display = 'none';
-    document.getElementById('fileInput').value = '';
-}
-async function uploadFile() {
-    if (!pendingFile) return toast('No file selected');
-    const fd = new FormData();
-    fd.append('file', pendingFile);
-    fd.append('name', document.getElementById('mediaName').value);
-    fd.append('tags', document.getElementById('mediaTags').value);
-    toast('Uploading...');
-    const res = await fetch(API+'/media/upload', {method:'POST', body: fd});
-    const d = await res.json();
-    if (res.ok) { toast('Uploaded!'); cancelUpload(); loadMedia(); }
-    else { toast(d.detail || 'Upload failed'); }
-}
-async function delMedia(id) { if(!confirm('Delete?'))return; await fetch(API+'/media/'+id,{method:'DELETE'}); loadMedia(); }
+let pendingFile=null;
+async function loadMedia(){const res=await fetch(API+'/media');const media=await res.json();document.getElementById('mediaGrid').innerHTML=media.map(m=>`<div class="grid-item">${m.media_type==='image'?'<img src="'+m.url+'">':''}<div class="grid-item-name">${m.name}</div><div class="grid-item-meta">${m.tags||'No tags'}</div><div class="grid-item-actions"><button class="btn btn-sm btn-danger" onclick="delMedia('${m.id}')">Delete</button></div></div>`).join('')||'<p style="color:#86868b;font-size:12px">No media files yet.</p>'}
+function handleFileSelect(input){if(input.files&&input.files[0])prepareUpload(input.files[0])}
+function handleDrop(e){if(e.dataTransfer.files&&e.dataTransfer.files[0])prepareUpload(e.dataTransfer.files[0])}
+function prepareUpload(file){if(file.size>5*1024*1024)return toast('File too large (max 5MB)');pendingFile=file;document.getElementById('uploadPreview').style.display='block';document.getElementById('mediaName').value=file.name.replace(/\.[^.]+$/,'');if(file.type.startsWith('image/')){const reader=new FileReader();reader.onload=e=>{document.getElementById('previewImg').src=e.target.result;document.getElementById('previewImg').style.display='block'};reader.readAsDataURL(file)}else{document.getElementById('previewImg').style.display='none'}}
+function cancelUpload(){pendingFile=null;document.getElementById('uploadPreview').style.display='none';document.getElementById('fileInput').value=''}
+async function uploadFile(){if(!pendingFile)return toast('No file selected');const fd=new FormData();fd.append('file',pendingFile);fd.append('name',document.getElementById('mediaName').value);fd.append('tags',document.getElementById('mediaTags').value);toast('Uploading...');const res=await fetch(API+'/media/upload',{method:'POST',body:fd});if(res.ok){toast('Uploaded!');cancelUpload();loadMedia()}else{const d=await res.json();toast(d.detail||'Upload failed')}}
+async function delMedia(id){if(!confirm('Delete?'))return;await fetch(API+'/media/'+id,{method:'DELETE'});loadMedia()}
 
 // === KNOWLEDGE ===
-async function addKnowledge() {
-    const t=document.getElementById('newKnowledge').value.trim(); if(!t)return;
-    await fetch(API+'/learn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({knowledge:t})});
-    document.getElementById('newKnowledge').value=''; loadSettings(); toast('Saved');
+async function addKnowledge(){const t=document.getElementById('newKnowledge').value.trim();if(!t)return;await fetch(API+'/learn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({knowledge:t})});document.getElementById('newKnowledge').value='';loadSettings();toast('Saved')}
+async function clearKnowledge(){if(!confirm('Clear all?'))return;await fetch(API+'/learn',{method:'DELETE'});loadSettings();toast('Cleared')}
+
+// === ANALYTICS ===
+async function loadAnalytics(){
+    const res=await fetch(API+'/analytics');
+    if(!res.ok){document.getElementById('analyticsContent').innerHTML='<div class="upgrade-banner">Upgrade to Growth plan for analytics<a href="#" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff">Upgrade</a></div>';return}
+    const d=await res.json();
+    const maxO=Math.max(...d.daily_orders.map(x=>x.orders),1);
+    const maxM=Math.max(...d.daily_messages.map(x=>x.messages),1);
+    document.getElementById('analyticsContent').innerHTML=`
+        <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+            <div class="stat"><div class="stat-val">${Math.round(d.revenue.total)} BDT</div><div class="stat-lbl">Total Revenue</div></div>
+            <div class="stat"><div class="stat-val">${Math.round(d.revenue.month)} BDT</div><div class="stat-lbl">This Month</div></div>
+            <div class="stat"><div class="stat-val">${Math.round(d.revenue.week)} BDT</div><div class="stat-lbl">This Week</div></div>
+        </div>
+        <div class="card"><div class="card-title">Orders (Last 7 Days)</div><div class="chart-bar">${d.daily_orders.map(x=>`<div class="chart-col"><div class="bar" style="height:${(x.orders/maxO)*100}px"></div><div class="lbl">${x.date}</div></div>`).join('')}</div></div>
+        <div class="card"><div class="card-title">Messages (Last 7 Days)</div><div class="chart-bar">${d.daily_messages.map(x=>`<div class="chart-col"><div class="bar" style="height:${(x.messages/maxM)*100}px;background:#0071e3"></div><div class="lbl">${x.date}</div></div>`).join('')}</div></div>
+        <div class="card"><div class="card-title">Top Products</div>${d.top_products.length?d.top_products.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f7;font-size:13px"><span>${i+1}. ${p.name}</span><span style="color:#86868b">${p.orders} orders</span></div>`).join(''):'<p style="font-size:12px;color:#86868b">No orders yet</p>'}</div>`;
 }
-async function clearKnowledge() { if(!confirm('Clear all?'))return; await fetch(API+'/learn',{method:'DELETE'}); loadSettings(); toast('Cleared'); }
+
+// === COUPONS ===
+async function loadCoupons(){
+    const res=await fetch(API+'/coupons');
+    if(!res.ok){document.getElementById('couponForm').innerHTML='<div class="upgrade-banner">Upgrade to Growth plan for coupons</div>';return}
+    const coupons=await res.json();
+    document.getElementById('couponTable').innerHTML=coupons.map(c=>`<tr><td style="font-weight:600">${c.code}</td><td>${c.discount_value}${c.discount_type==='percentage'?'%':' BDT'}</td><td>${c.min_order} BDT</td><td>${c.used_count}${c.max_uses>0?'/'+c.max_uses:''}</td><td>${c.is_active?'Active':'Inactive'}</td><td><button class="btn btn-sm btn-danger" onclick="delCoupon('${c.id}')">Del</button></td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:#86868b;padding:20px">No coupons yet</td></tr>'
+}
+async function createCoupon(){
+    const code=document.getElementById('couponCode').value.trim();const val=parseFloat(document.getElementById('couponValue').value);
+    if(!code||!val)return toast('Code and value required');
+    const res=await fetch(API+'/coupons',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,discount_type:document.getElementById('couponType').value,discount_value:val,min_order:parseFloat(document.getElementById('couponMin').value)||0,max_uses:parseInt(document.getElementById('couponMax').value)||-1})});
+    if(res.ok){toast('Coupon created');document.getElementById('couponCode').value='';document.getElementById('couponValue').value='';loadCoupons()}else{const d=await res.json();toast(d.detail||'Failed')}
+}
+async function delCoupon(id){if(!confirm('Delete coupon?'))return;await fetch(API+'/coupons/'+id,{method:'DELETE'});loadCoupons();toast('Deleted')}
+
+// === BROADCAST ===
+async function sendBroadcast(){
+    const msg=document.getElementById('broadcastMsg').value.trim();if(!msg)return toast('Write a message first');
+    if(!confirm('Send this message to ALL customers?'))return;
+    toast('Sending broadcast...');
+    const res=await fetch(API+'/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
+    const d=await res.json();
+    if(res.ok){document.getElementById('broadcastResult').innerHTML=`<span style="color:#34c759">Sent to ${d.sent} customers${d.failed?' ('+d.failed+' failed)':''}</span>`;document.getElementById('broadcastMsg').value=''}
+    else{document.getElementById('broadcastResult').innerHTML=`<span style="color:#d32f2f">${d.detail||'Failed'}</span>`}
+}
 
 // === INIT ===
-function initDashboard() { loadDashboard(); loadSettings(); loadProducts(); loadMedia(); loadOrders(); loadCustomers(); loadActivity(); }
-if (SID) { checkPin(); }
-else { document.body.innerHTML = '<div style="text-align:center;padding:100px;font-family:Inter,sans-serif"><h2>No seller ID</h2><p style="color:#86868b;margin-top:8px">Access from the success page after connecting Facebook.</p></div>'; }
+function initDashboard(){loadDashboard();loadSettings();loadProducts();loadMedia();loadOrders();loadCustomers();loadActivity()}
+if(SID){checkPin()}else{document.body.innerHTML='<div style="text-align:center;padding:100px;font-family:Inter,sans-serif"><h2>No seller ID</h2><p style="color:#86868b;margin-top:8px">Access from the success page after connecting Facebook.</p></div>'}
+
+// === ORDER SOUND NOTIFICATION (poll every 30s) ===
+let lastOrderCount=null;
+async function checkNewOrders(){
+    try{const res=await fetch(API+'/dashboard');const d=await res.json();
+    if(lastOrderCount!==null&&d.stats.pending_orders>lastOrderCount){try{document.getElementById('orderSound').play()}catch(e){}}
+    lastOrderCount=d.stats.pending_orders}catch(e){}
+}
+setInterval(checkNewOrders,30000);
 </script>
 </body>
 </html>
