@@ -28,6 +28,7 @@ class Seller(Base):
 
     # Custom AI config
     bot_name = Column(String, default="AI Assistant")
+    bot_personality = Column(String, default="friendly")  # friendly, professional, casual, funny
     custom_instructions = Column(Text, default="")  # Seller's custom rules for the bot
     learned_knowledge = Column(Text, default="")  # Auto-learned from owner corrections
 
@@ -136,7 +137,8 @@ class Media(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     seller_id = Column(String, ForeignKey("sellers.id"), nullable=False)
     name = Column(String, nullable=False)
-    url = Column(String, nullable=False)
+    url = Column(String, nullable=True)
     media_type = Column(String, default="image")  # image, video
     tags = Column(String, default="")  # Comma-separated tags for AI to match
+    file_data = Column(Text)  # Base64-encoded file data for uploaded files
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

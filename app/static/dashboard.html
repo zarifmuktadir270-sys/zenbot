@@ -127,6 +127,18 @@
         .activity-text { flex: 1; color: #1d1d1f; }
         .activity-time { color: #86868b; font-size: 11px; flex-shrink: 0; }
 
+        /* Personality */
+        .personality-opt { cursor: pointer; }
+        .personality-opt input { display: none; }
+        .personality-card { padding: 12px; border: 2px solid #e8e8ed; border-radius: 10px; transition: all 0.15s; }
+        .personality-opt input:checked + .personality-card { border-color: #d32f2f; background: #fef2f2; }
+        .personality-card:hover { border-color: #ccc; }
+
+        /* Upload */
+        .upload-zone { border: 2px dashed #e8e8ed; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.15s; }
+        .upload-zone:hover { border-color: #d32f2f; background: #fef2f2; }
+        .upload-zone.dragover { border-color: #d32f2f; background: #fef2f2; }
+
         /* Toast */
         .toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 18px; background: #1d1d1f; color: white; border-radius: 8px; font-size: 12px; font-weight: 500; opacity: 0; transition: opacity 0.2s; z-index: 100; }
         .toast.show { opacity: 1; }
@@ -281,15 +293,27 @@
             <div class="panel" id="p-media">
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Media Files</div></div>
                 <div class="card">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                        <div class="field"><label>Name</label><input type="text" id="mediaName" placeholder="Size chart, product photo..."></div>
-                        <div class="field"><label>URL</label><input type="text" id="mediaUrl" placeholder="https://..."></div>
-                        <div class="field"><label>Tags</label><input type="text" id="mediaTags" placeholder="size, chart"></div>
-                        <div class="field"><label>Type</label>
-                            <select id="mediaType"><option value="image">Image</option><option value="video">Video</option></select>
+                    <div class="card-title" style="margin-bottom:10px">Upload File</div>
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+                         ondragover="event.preventDefault();this.classList.add('dragover')"
+                         ondragleave="this.classList.remove('dragover')"
+                         ondrop="event.preventDefault();this.classList.remove('dragover');handleDrop(event)">
+                        <div style="font-size:24px;color:#ccc;margin-bottom:6px">+</div>
+                        <div style="font-size:13px;color:#6e6e73;font-weight:500">Click or drag file here</div>
+                        <div style="font-size:11px;color:#86868b;margin-top:4px">Images and videos, max 5MB</div>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*,video/*" style="display:none" onchange="handleFileSelect(this)">
+                    <div id="uploadPreview" style="display:none;margin-top:10px">
+                        <img id="previewImg" style="max-height:100px;border-radius:6px;margin-bottom:8px">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div class="field"><label>Name</label><input type="text" id="mediaName" placeholder="Size chart, product photo..."></div>
+                            <div class="field"><label>Tags</label><input type="text" id="mediaTags" placeholder="size, chart"></div>
+                        </div>
+                        <div class="btn-row">
+                            <button class="btn btn-sm btn-primary" onclick="uploadFile()">Upload</button>
+                            <button class="btn btn-sm btn-secondary" onclick="cancelUpload()">Cancel</button>
                         </div>
                     </div>
-                    <button class="btn btn-sm btn-primary" onclick="addMedia()">Add Media</button>
                 </div>
                 <div class="grid" id="mediaGrid" style="margin-top:14px"></div>
             </div>
@@ -314,6 +338,40 @@
                 <div class="card">
                     <div class="card-title">Identity</div>
                     <div class="field"><label>Bot Name</label><input type="text" id="botName" placeholder="AI Assistant"><div class="field-hint">How the bot introduces itself</div></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">AI Personality</div>
+                    <p style="font-size:12px;color:#86868b;margin-bottom:10px">Choose how your AI talks to customers</p>
+                    <div id="personalityGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <label class="personality-opt" data-val="friendly">
+                            <input type="radio" name="personality" value="friendly" checked>
+                            <div class="personality-card">
+                                <div style="font-size:13px;font-weight:600">Friendly</div>
+                                <div style="font-size:11px;color:#86868b">Warm and approachable, like a local shop friend</div>
+                            </div>
+                        </label>
+                        <label class="personality-opt" data-val="professional">
+                            <input type="radio" name="personality" value="professional">
+                            <div class="personality-card">
+                                <div style="font-size:13px;font-weight:600">Professional</div>
+                                <div style="font-size:11px;color:#86868b">Polite, business-like, respectful</div>
+                            </div>
+                        </label>
+                        <label class="personality-opt" data-val="casual">
+                            <input type="radio" name="personality" value="casual">
+                            <div class="personality-card">
+                                <div style="font-size:13px;font-weight:600">Casual</div>
+                                <div style="font-size:11px;color:#86868b">Relaxed and chill, like texting a buddy</div>
+                            </div>
+                        </label>
+                        <label class="personality-opt" data-val="funny">
+                            <input type="radio" name="personality" value="funny">
+                            <div class="personality-card">
+                                <div style="font-size:13px;font-weight:600">Funny</div>
+                                <div style="font-size:11px;color:#86868b">Witty and humorous, keeps it light</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
                 <div class="card">
                     <div class="card-title">Shop Information</div>
@@ -461,6 +519,10 @@ async function loadSettings() {
     document.getElementById('returnPolicy').value = d.return_policy || '';
     document.getElementById('customInstructions').value = d.custom_instructions || '';
     updateBotUI(d.bot_paused);
+    // Personality
+    const p = d.bot_personality || 'friendly';
+    const radio = document.querySelector(`input[name="personality"][value="${p}"]`);
+    if (radio) radio.checked = true;
     // Plan banner
     const exp = d.plan_expires_at ? new Date(d.plan_expires_at) : null;
     const days = exp ? Math.max(0, Math.ceil((exp - new Date()) / 86400000)) : 0;
@@ -527,8 +589,10 @@ function timeAgo(d) {
 
 // === SETTINGS ===
 async function saveSettings() {
+    const personality = document.querySelector('input[name="personality"]:checked')?.value || 'friendly';
     await fetch(API + '/settings', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({
-        bot_name: document.getElementById('botName').value, delivery_info: document.getElementById('deliveryInfo').value,
+        bot_name: document.getElementById('botName').value, bot_personality: personality,
+        delivery_info: document.getElementById('deliveryInfo').value,
         payment_methods: document.getElementById('paymentMethods').value, delivery_time: document.getElementById('deliveryTime').value,
         return_policy: document.getElementById('returnPolicy').value, custom_instructions: document.getElementById('customInstructions').value,
     })});
@@ -626,6 +690,7 @@ function editStock(id,cur) { const v=prompt('Stock (-1=unlimited, 0=out):',cur);
 async function refreshProducts() { toast('Syncing...'); const r=await fetch(API+'/refresh-products',{method:'POST'}); const d=await r.json(); loadProducts(); toast(d.message); }
 
 // === MEDIA ===
+let pendingFile = null;
 async function loadMedia() {
     const res = await fetch(API+'/media'); const media = await res.json();
     document.getElementById('mediaGrid').innerHTML = media.map(m => `<div class="grid-item">
@@ -634,11 +699,39 @@ async function loadMedia() {
         <div class="grid-item-actions"><button class="btn btn-sm btn-danger" onclick="delMedia('${m.id}')">Delete</button></div></div>`).join('')
         || '<p style="color:#86868b;font-size:12px">No media files yet.</p>';
 }
-async function addMedia() {
-    const n=document.getElementById('mediaName').value, u=document.getElementById('mediaUrl').value;
-    if(!n||!u)return toast('Name and URL required');
-    await fetch(API+'/media',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,url:u,media_type:document.getElementById('mediaType').value,tags:document.getElementById('mediaTags').value})});
-    ['mediaName','mediaUrl','mediaTags'].forEach(id=>document.getElementById(id).value=''); loadMedia(); toast('Added');
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) prepareUpload(input.files[0]);
+}
+function handleDrop(e) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) prepareUpload(e.dataTransfer.files[0]);
+}
+function prepareUpload(file) {
+    if (file.size > 5*1024*1024) return toast('File too large (max 5MB)');
+    pendingFile = file;
+    document.getElementById('uploadPreview').style.display = 'block';
+    document.getElementById('mediaName').value = file.name.replace(/\.[^.]+$/, '');
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => { document.getElementById('previewImg').src = e.target.result; document.getElementById('previewImg').style.display = 'block'; };
+        reader.readAsDataURL(file);
+    } else { document.getElementById('previewImg').style.display = 'none'; }
+}
+function cancelUpload() {
+    pendingFile = null;
+    document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+}
+async function uploadFile() {
+    if (!pendingFile) return toast('No file selected');
+    const fd = new FormData();
+    fd.append('file', pendingFile);
+    fd.append('name', document.getElementById('mediaName').value);
+    fd.append('tags', document.getElementById('mediaTags').value);
+    toast('Uploading...');
+    const res = await fetch(API+'/media/upload', {method:'POST', body: fd});
+    const d = await res.json();
+    if (res.ok) { toast('Uploaded!'); cancelUpload(); loadMedia(); }
+    else { toast(d.detail || 'Upload failed'); }
 }
 async function delMedia(id) { if(!confirm('Delete?'))return; await fetch(API+'/media/'+id,{method:'DELETE'}); loadMedia(); }
 

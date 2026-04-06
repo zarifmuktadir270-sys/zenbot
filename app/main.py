@@ -32,6 +32,7 @@ try:
             ('learned_knowledge', 'TEXT'),
             ('bot_paused', 'BOOLEAN DEFAULT FALSE'),
             ('dashboard_pin', 'VARCHAR'),
+            ('bot_personality', "VARCHAR DEFAULT 'friendly'"),
         ]:
             if col_name not in seller_columns:
                 conn.execute(text(f"ALTER TABLE sellers ADD COLUMN {col_name} {col_type}"))
@@ -39,6 +40,10 @@ try:
         product_columns = [c['name'] for c in inspector.get_columns('products')]
         if 'stock' not in product_columns:
             conn.execute(text("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT -1"))
+
+        media_columns = [c['name'] for c in inspector.get_columns('media')]
+        if 'file_data' not in media_columns:
+            conn.execute(text("ALTER TABLE media ADD COLUMN file_data TEXT"))
 
         conn.commit()
 except Exception as e:

@@ -3,16 +3,19 @@ Seller Dashboard API — Routes for sellers to manage their shop, view orders, e
 """
 
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
 import hashlib
+import base64
 
 from app.models.database import get_db
 from app.models.models import Seller, Product, Customer, Order, Conversation, Media
 from app.services.page_scraper import scrape_and_save_products
+from app.config import settings as app_settings
 
 router = APIRouter(prefix="/api/seller", tags=["seller"])
 
@@ -43,6 +46,7 @@ class SellerUpdate(BaseModel):
     delivery_time: Optional[str] = None
     return_policy: Optional[str] = None
     bot_name: Optional[str] = None
+    bot_personality: Optional[str] = None
     custom_instructions: Optional[str] = None
 
 
@@ -125,7 +129,7 @@ async def update_settings(seller_id: str, data: SellerUpdate, db: Session = Depe
     if not seller:
         raise HTTPException(status_code=404, detail="Seller not found")
 
-    for field in ["delivery_info", "payment_methods", "delivery_time", "return_policy", "bot_name", "custom_instructions"]:
+    for field in ["delivery_info", "payment_methods", "delivery_time", "return_policy", "bot_name", "bot_personality", "custom_instructions"]:
         val = getattr(data, field, None)
         if val is not None:
             setattr(seller, field, val)
@@ -371,6 +375,7 @@ async def get_settings(seller_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Seller not found")
     return {
         "bot_name": getattr(seller, "bot_name", "") or "AI Assistant",
+        "bot_personality": getattr(seller, "bot_personality", "") or "friendly",
         "custom_instructions": getattr(seller, "custom_instructions", "") or "",
         "learned_knowledge": getattr(seller, "learned_knowledge", "") or "",
         "delivery_info": seller.delivery_info or "",
@@ -485,6 +490,68 @@ async def add_media(seller_id: str, data: MediaCreate, db: Session = Depends(get
     db.add(media)
     db.commit()
     return {"id": media.id, "message": "Media added"}
+
+
+@router.post("/{seller_id}/media/upload")
+async def upload_media(
+    seller_id: str,
+    file: UploadFile = File(...),
+    name: str = Form(""),
+    tags: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """Upload a media file (image/video). Stored in DB as base64."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+
+    # Read file (limit 5MB)
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+
+    content_type = file.content_type or "image/jpeg"
+    media_type = "video" if "video" in content_type else "image"
+    file_b64 = base64.b64encode(contents).decode()
+    data_uri = f"data:{content_type};base64,{file_b64}"
+
+    display_name = name or file.filename or "Uploaded file"
+
+    base_url = app_settings.app_url.rstrip("/")
+    media = Media(
+        seller_id=seller_id,
+        name=display_name,
+        url="PLACEHOLDER",
+        media_type=media_type,
+        tags=tags,
+        file_data=data_uri,
+    )
+    db.add(media)
+    db.flush()
+    media.url = f"{base_url}/api/seller/{seller_id}/media/serve/{media.id}"
+    db.commit()
+
+    return {"id": media.id, "name": display_name, "url": media.url, "message": "Uploaded"}
+
+
+@router.get("/{seller_id}/media/serve/{media_id}")
+async def serve_media(seller_id: str, media_id: str, db: Session = Depends(get_db)):
+    """Serve an uploaded media file from DB."""
+    media = db.query(Media).filter(Media.id == media_id, Media.seller_id == seller_id).first()
+    if not media or not media.file_data:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    # Parse data URI: data:image/jpeg;base64,/9j/4AAQ...
+    data_uri = media.file_data
+    if data_uri.startswith("data:"):
+        header, b64data = data_uri.split(",", 1)
+        content_type = header.split(":")[1].split(";")[0]
+    else:
+        b64data = data_uri
+        content_type = "image/jpeg"
+
+    file_bytes = base64.b64decode(b64data)
+    return Response(content=file_bytes, media_type=content_type)
 
 
 @router.delete("/{seller_id}/media/{media_id}")
