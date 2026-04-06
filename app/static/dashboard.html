@@ -22,6 +22,13 @@
         .topbar-left { display: flex; align-items: center; gap: 16px; }
         .logo { font-size: 17px; font-weight: 700; color: #1d1d1f; text-decoration: none; letter-spacing: -0.5px; }
         .shop-name { font-size: 13px; color: #86868b; font-weight: 500; }
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 980px; font-size: 11px; font-weight: 600;
+        }
+        .status-badge.active { background: #d4edda; color: #155724; }
+        .status-badge.paused { background: #f8d7da; color: #721c24; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
         .topbar-right { display: flex; gap: 8px; }
         .btn-small {
             padding: 6px 14px; border-radius: 980px; font-size: 12px; font-weight: 500;
@@ -157,6 +164,10 @@
     <div class="topbar-left">
         <a href="/" class="logo">ZenBot</a>
         <span class="shop-name" id="shopName"></span>
+        <span class="status-badge active" id="topStatusBadge">
+            <span class="status-dot"></span>
+            <span>Active</span>
+        </span>
     </div>
     <div class="topbar-right">
         <button class="btn-small" onclick="refreshProducts()">Sync Products</button>
@@ -186,6 +197,17 @@
 
     <!-- Bot Settings -->
     <div class="panel" id="panel-bot">
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 15px; font-weight: 600; margin-bottom: 6px;" id="botStatusText">Bot is Active</div>
+                    <div style="font-size: 13px; opacity: 0.9;" id="botStatusHint">Customers can message and get AI replies</div>
+                </div>
+                <button id="toggleBotBtn" onclick="toggleBot()" style="padding: 10px 24px; border-radius: 980px; font-size: 14px; font-weight: 600; border: 2px solid white; background: rgba(255,255,255,0.15); color: white; cursor: pointer; transition: all 0.15s; backdrop-filter: blur(10px);">
+                    Pause Bot
+                </button>
+            </div>
+        </div>
         <div class="card">
             <div class="card-title">Bot Identity</div>
             <div class="field">
@@ -328,6 +350,8 @@ async function loadSettings() {
     document.getElementById('deliveryTime').value = d.delivery_time || '';
     document.getElementById('returnPolicy').value = d.return_policy || '';
     document.getElementById('customInstructions').value = d.custom_instructions || '';
+    // Bot pause status
+    updateBotStatusUI(d.bot_paused || false);
     // Knowledge
     const kl = document.getElementById('knowledgeList');
     kl.innerHTML = '';
@@ -338,6 +362,43 @@ async function loadSettings() {
     } else {
         kl.innerHTML = '<p style="font-size:13px;color:#86868b">No knowledge added yet.</p>';
     }
+}
+
+function updateBotStatusUI(isPaused) {
+    const btn = document.getElementById('toggleBotBtn');
+    const statusText = document.getElementById('botStatusText');
+    const statusHint = document.getElementById('botStatusHint');
+    const card = btn.closest('.card');
+    const topBadge = document.getElementById('topStatusBadge');
+
+    if (isPaused) {
+        btn.textContent = 'Resume Bot';
+        statusText.textContent = 'Bot is Paused';
+        statusHint.textContent = 'AI will not reply to customer messages';
+        card.style.background = 'linear-gradient(135deg, #ea526f 0%, #d64161 100%)';
+        topBadge.className = 'status-badge paused';
+        topBadge.querySelector('span:last-child').textContent = 'Paused';
+    } else {
+        btn.textContent = 'Pause Bot';
+        statusText.textContent = 'Bot is Active';
+        statusHint.textContent = 'Customers can message and get AI replies';
+        card.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        topBadge.className = 'status-badge active';
+        topBadge.querySelector('span:last-child').textContent = 'Active';
+    }
+}
+
+async function toggleBot() {
+    const btn = document.getElementById('toggleBotBtn');
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    const res = await fetch(API + '/toggle-bot', { method: 'POST' });
+    const data = await res.json();
+
+    updateBotStatusUI(data.bot_paused);
+    toast(data.message);
+    btn.disabled = false;
 }
 
 async function saveSettings() {

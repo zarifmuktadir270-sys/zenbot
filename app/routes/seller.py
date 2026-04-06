@@ -257,7 +257,24 @@ async def get_settings(seller_id: str, db: Session = Depends(get_db)):
         "delivery_time": seller.delivery_time or "",
         "return_policy": seller.return_policy or "",
         "fb_page_name": seller.fb_page_name,
+        "bot_paused": getattr(seller, "bot_paused", False),
     }
+
+
+@router.post("/{seller_id}/toggle-bot")
+async def toggle_bot(seller_id: str, db: Session = Depends(get_db)):
+    """Pause or resume the AI bot."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+
+    # Toggle the pause state
+    current_state = getattr(seller, "bot_paused", False)
+    seller.bot_paused = not current_state
+    db.commit()
+
+    status = "paused" if seller.bot_paused else "active"
+    return {"message": f"Bot is now {status}", "bot_paused": seller.bot_paused}
 
 
 # --- Product CRUD ---

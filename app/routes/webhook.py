@@ -200,6 +200,11 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
         print(f"Seller {seller.fb_page_name} is deactivated. Ignoring message.")
         return
 
+    # Check if bot is paused by seller
+    if seller.bot_paused:
+        print(f"Bot is paused for {seller.fb_page_name}. Ignoring message.")
+        return
+
     now = datetime.now(timezone.utc)
 
     # Check if plan has expired
