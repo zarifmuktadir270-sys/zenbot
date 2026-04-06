@@ -655,7 +655,18 @@ async function loadPaymentHistory(){
 }
 
 // === INIT ===
-function initDashboard(){loadDashboard();loadSettings();loadProducts();loadMedia();loadOrders();loadCustomers();loadActivity()}
+function initDashboard(){
+    loadDashboard();loadSettings();loadProducts();loadMedia();loadOrders();loadCustomers();loadActivity();
+    const tab=params.get('tab');
+    if(tab){
+        setTimeout(()=>{
+            document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+            const panel=document.getElementById('p-'+tab);
+            if(panel){panel.classList.add('active');if(tab==='billing')loadBilling();if(tab==='analytics')loadAnalytics();if(tab==='coupons')loadCoupons()}
+        },300);
+    }
+}
 if(SID){checkPin()}else{document.body.innerHTML='<div style="text-align:center;padding:100px;font-family:Inter,sans-serif"><h2>No seller ID</h2><p style="color:#86868b;margin-top:8px">Access from the success page after connecting Facebook.</p></div>'}
 
 // === ORDER SOUND NOTIFICATION (poll every 30s) ===
