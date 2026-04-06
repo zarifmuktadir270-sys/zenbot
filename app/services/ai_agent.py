@@ -267,6 +267,27 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
         if not isinstance(result, dict) or "reply" not in result:
             raise ValueError("Invalid response format")
 
+        # Fix: Check if reply field contains nested JSON (AI misbehavior)
+        reply_text = result.get("reply", "")
+        if isinstance(reply_text, str) and reply_text.strip().startswith("{"):
+            try:
+                # Try to parse reply as JSON
+                nested = json.loads(reply_text)
+                if isinstance(nested, dict) and "reply" in nested:
+                    # Extract the actual message from nested structure
+                    result["reply"] = nested["reply"]
+                    # Also update other fields if present
+                    if "intent" in nested:
+                        result["intent"] = nested["intent"]
+                    if "show_products" in nested:
+                        result["show_products"] = nested["show_products"]
+                    if "send_media" in nested:
+                        result["send_media"] = nested["send_media"]
+                    if "order_data" in nested:
+                        result["order_data"] = nested["order_data"]
+            except:
+                pass  # If parsing fails, use reply as-is
+
     except (json.JSONDecodeError, ValueError) as e:
         print(f"Failed to parse AI response: {e}")
         print(f"Raw response: {raw_text[:200]}")
@@ -290,6 +311,22 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
             "order_data": None,
             "needs_human": True,
         }
+
+    # Final cleanup: Ensure reply is clean text (no JSON artifacts)
+    if result.get("reply"):
+        reply = result["reply"]
+        # Remove any remaining JSON structure artifacts
+        if isinstance(reply, str):
+            # If it still looks like JSON, try one more extraction
+            if (reply.strip().startswith("{") and reply.strip().endswith("}")) or \
+               (reply.strip().startswith("[") and reply.strip().endswith("]")):
+                try:
+                    temp = json.loads(reply)
+                    if isinstance(temp, dict) and "reply" in temp:
+                        reply = temp["reply"]
+                except:
+                    pass
+            result["reply"] = reply
 
     # Save conversation to database
     # Save customer message

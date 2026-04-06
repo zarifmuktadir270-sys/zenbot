@@ -167,7 +167,7 @@ async def facebook_callback(
             print(f"Warning: Failed to subscribe webhook: {webhook_response.text}")
 
         if existing_seller:
-            # Reconnect — update token and admin ID
+            # Reconnect — update token and admin ID, but DON'T reset trial
             existing_seller.fb_page_access_token = page_access_token
             existing_seller.admin_fb_user_id = admin_user_id
             existing_seller.fb_page_name = page_name
@@ -175,6 +175,20 @@ async def facebook_callback(
             db.commit()
             db.refresh(seller)
         else:
+            # === TRIAL ABUSE CHECK ===
+            # Check if this Facebook user already used a trial with ANY page
+            trial_plan = "trial"
+            trial_days = 3
+            if admin_user_id:
+                existing_by_user = db.query(Seller).filter(
+                    Seller.admin_fb_user_id == admin_user_id
+                ).first()
+                if existing_by_user:
+                    # This person already used a trial — no free trial for new pages
+                    trial_plan = "expired"
+                    trial_days = 0
+                    print(f"Trial abuse blocked: FB user {admin_user_id} already has seller {existing_by_user.fb_page_name}")
+
             # 7. Create new seller
             seller = Seller(
                 fb_page_id=page_id,
@@ -185,8 +199,8 @@ async def facebook_callback(
                 payment_methods="bKash, Nagad, COD",
                 delivery_time="ঢাকা: ১-২ দিন, ঢাকার বাইরে: ৩-৫ দিন",
                 return_policy="৭ দিনের মধ্যে return policy",
-                plan="trial",
-                plan_expires_at=datetime.now(timezone.utc) + timedelta(days=14),
+                plan=trial_plan,
+                plan_expires_at=datetime.now(timezone.utc) + timedelta(days=trial_days),
             )
             db.add(seller)
             db.commit()

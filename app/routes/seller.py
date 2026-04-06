@@ -88,7 +88,7 @@ async def register_seller(data: SellerCreate, db: Session = Depends(get_db)):
         delivery_time=data.delivery_time,
         return_policy=data.return_policy,
         plan="trial",
-        plan_expires_at=datetime.now(timezone.utc) + timedelta(days=14),
+        plan_expires_at=datetime.now(timezone.utc) + timedelta(days=3),
     )
     db.add(seller)
     db.commit()

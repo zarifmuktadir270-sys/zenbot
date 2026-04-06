@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zen Labs — AI Customer Service for Facebook Pages</title>
+    <title>ZenBot — AI Customer Service for Facebook Pages</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
 
@@ -21,7 +21,7 @@
             --accent-hover: #0077ed;
         }
 
-        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
@@ -36,9 +36,7 @@
         /* ---- NAV ---- */
         nav {
             position: sticky; top: 0; z-index: 100;
-            background: rgba(251,251,253,0.85);
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            background: rgba(251,251,253,0.97);
             border-bottom: 1px solid var(--border);
         }
         .nav-inner {
@@ -171,9 +169,8 @@
         .step {
             text-align: center; padding: 40px 28px;
             background: var(--bg-card); border-radius: 20px;
-            border: 1px solid var(--border); transition: all 0.3s;
+            border: 1px solid var(--border);
         }
-        .step:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); transform: translateY(-2px); }
         .step-number {
             width: 40px; height: 40px; border-radius: 50%;
             background: var(--bg-elevated); display: inline-flex;
@@ -193,9 +190,7 @@
         .feature-card {
             padding: 36px 32px; background: var(--bg-card);
             border-radius: 20px; border: 1px solid var(--border);
-            transition: all 0.3s;
         }
-        .feature-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); transform: translateY(-2px); }
         .feature-icon {
             width: 40px; height: 40px; border-radius: 12px;
             background: var(--bg-elevated); display: flex;
@@ -217,7 +212,7 @@
         .price-card {
             padding: 40px 32px; background: var(--bg-card);
             border-radius: 20px; border: 1px solid var(--border);
-            text-align: center; transition: all 0.3s;
+            text-align: center;
         }
         .price-card.featured {
             border-color: var(--accent); position: relative;
@@ -325,7 +320,7 @@
 <!-- NAV -->
 <nav>
     <div class="nav-inner">
-        <a href="/" class="logo">Zen Labs</a>
+        <a href="/" class="logo">ZenBot</a>
         <div class="nav-links">
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
@@ -338,7 +333,7 @@
 
 <!-- HERO -->
 <section class="hero">
-    <div class="hero-badge">AI-powered. Made for Bangladesh.</div>
+    <div class="hero-badge">ZenBot — AI-powered. Made for Bangladesh.</div>
     <h1>Your Facebook page never sleeps <span>anymore.</span></h1>
     <p class="hero-sub">
         আপনার Facebook page এ AI assistant বসিয়ে দিন। Customer দের message এর reply, order নেওয়া, product দেখানো — সব চলবে ২৪/৭, আপনি ঘুমালেও।
@@ -530,7 +525,7 @@
 
 <!-- FOOTER -->
 <footer>
-    <span>Zen Labs, Dhaka, Bangladesh</span>
+    <span>ZenBot by Zen Labs, Dhaka</span>
     <div class="footer-links">
         <a href="/static/privacy.html">Privacy</a>
         <a href="mailto:support@zenlabs.ai">Contact</a>
@@ -544,35 +539,29 @@
         item.classList.toggle('open');
     }
 
-    // Chat demo animation
+    // Chat demo — only runs when visible, plays once then stops
     const messages = [
         { type: 'user', text: 'hi, blue dress ta available ache?' },
         { type: 'bot', text: 'জি, Blue Floral Dress available আছে! Size S, M, L আছে। কোনটা চাইবেন?' },
         { type: 'user', text: 'M size, price koto?' },
-        { type: 'bot', text: '১,২৫০ টাকা। Delivery charge ঢাকায় ৬০, বাইরে ১২০ টাকা। Order confirm করবেন?' },
+        { type: 'bot', text: '১,২৫০ টাকা। Delivery charge ঢাকায় ৬০, বাইরে ১২০। Order দিবেন?' },
         { type: 'user', text: 'haa confirm koro' },
-        { type: 'bot', text: 'দারুণ! আপনার নাম, phone number আর delivery address টা দিন, order process করে দিচ্ছি।' },
+        { type: 'bot', text: 'দারুণ! নাম, phone number আর address দেন, process করে দিচ্ছি।' },
     ];
 
     const chat = document.getElementById('demoChat');
     let msgIndex = 0;
+    let demoStarted = false;
 
     function showNextMessage() {
-        if (msgIndex >= messages.length) {
-            // Loop after pause
-            setTimeout(() => { chat.innerHTML = ''; msgIndex = 0; showNextMessage(); }, 3000);
-            return;
-        }
+        if (msgIndex >= messages.length) return; // play once, stop
         const msg = messages[msgIndex];
 
-        // Show typing indicator for bot messages
         if (msg.type === 'bot') {
             const typing = document.createElement('div');
             typing.className = 'chat-typing';
             typing.innerHTML = '<span></span><span></span><span></span>';
             chat.appendChild(typing);
-            chat.scrollTop = chat.scrollHeight;
-
             setTimeout(() => {
                 typing.remove();
                 addMessage(msg);
@@ -590,19 +579,18 @@
         const div = document.createElement('div');
         div.className = 'chat-msg ' + msg.type;
         div.textContent = msg.text;
-        div.style.opacity = '0';
-        div.style.transform = 'translateY(8px)';
         chat.appendChild(div);
-        requestAnimationFrame(() => {
-            div.style.transition = 'opacity 0.3s, transform 0.3s';
-            div.style.opacity = '1';
-            div.style.transform = 'translateY(0)';
-        });
-        chat.scrollTop = chat.scrollHeight;
     }
 
-    // Start demo after a small delay
-    setTimeout(showNextMessage, 800);
+    // Only start when chat demo scrolls into view
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !demoStarted) {
+            demoStarted = true;
+            setTimeout(showNextMessage, 400);
+            observer.disconnect();
+        }
+    }, { threshold: 0.3 });
+    observer.observe(document.querySelector('.demo-window'));
 </script>
 
 </body>

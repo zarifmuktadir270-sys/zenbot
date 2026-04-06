@@ -195,6 +195,36 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
         print(f"No seller found for page {page_id}")
         return
 
+    # === SUBSCRIPTION CHECK ===
+    if not seller.is_active:
+        print(f"Seller {seller.fb_page_name} is deactivated. Ignoring message.")
+        return
+
+    now = datetime.now(timezone.utc)
+
+    # Check if plan has expired
+    if seller.plan_expires_at and now > seller.plan_expires_at:
+        if seller.plan == "trial":
+            # Trial expired — send one-time message and stop
+            await send_message(
+                sender_id,
+                "দুঃখিত, এই shop এর trial period শেষ হয়ে গেছে। "
+                "Shop owner শীঘ্রই service renew করবেন। ধন্যবাদ!",
+                seller.fb_page_access_token
+            )
+            print(f"Trial expired for {seller.fb_page_name}")
+            return
+        elif seller.plan in ("starter", "growth", "professional"):
+            # Paid plan expired — send message and stop
+            await send_message(
+                sender_id,
+                "দুঃখিত, এই shop এর subscription renew হয়নি। "
+                "Shop owner এর সাথে যোগাযোগ করুন। ধন্যবাদ!",
+                seller.fb_page_access_token
+            )
+            print(f"Subscription expired for {seller.fb_page_name}")
+            return
+
     await send_typing_indicator(sender_id, seller.fb_page_access_token)
 
     customer = db.query(Customer).filter(
