@@ -34,10 +34,9 @@
         /* Sidebar + Content */
         .app-shell { display: flex; min-height: calc(100vh - 52px); }
         .sidebar { width: 200px; background: #fff; border-right: 1px solid #e8e8ed; padding: 16px 0; flex-shrink: 0; }
-        .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13px; font-weight: 500; color: #6e6e73; cursor: pointer; transition: all 0.12s; border: none; background: none; width: 100%; text-align: left; }
+        .nav-item { display: block; padding: 9px 20px; font-size: 13px; font-weight: 500; color: #6e6e73; cursor: pointer; transition: all 0.12s; border: none; background: none; width: 100%; text-align: left; }
         .nav-item:hover { color: #1d1d1f; background: #f5f5f7; }
         .nav-item.active { color: #d32f2f; background: #fef2f2; font-weight: 600; }
-        .nav-icon { width: 18px; text-align: center; font-size: 15px; }
         .nav-sep { height: 1px; background: #e8e8ed; margin: 8px 16px; }
 
         .content { flex: 1; padding: 28px 32px; max-width: 960px; }
@@ -175,31 +174,37 @@
             </button>
         </div>
         <div class="topbar-right">
-            <button class="btn-icon" onclick="refreshProducts()" title="Sync Products">&#8635;</button>
-            <button class="btn-icon" onclick="showSecurityModal()" title="Security">&#128274;</button>
-            <a href="/" class="btn-icon" title="Home">&#8962;</a>
+            <button class="btn-icon" onclick="refreshProducts()" title="Sync Products">S</button>
+            <a href="/" class="btn-icon" title="Home">H</a>
         </div>
     </div>
 
     <div class="app-shell">
         <div class="sidebar">
-            <button class="nav-item active" onclick="nav('overview')"><span class="nav-icon">&#9632;</span>Overview</button>
-            <button class="nav-item" onclick="nav('orders')"><span class="nav-icon">&#128230;</span>Orders</button>
-            <button class="nav-item" onclick="nav('customers')"><span class="nav-icon">&#128101;</span>Customers</button>
-            <button class="nav-item" onclick="nav('conversations')"><span class="nav-icon">&#128172;</span>Conversations</button>
+            <button class="nav-item active" onclick="nav('overview')">Overview</button>
+            <button class="nav-item" onclick="nav('orders')">Orders</button>
+            <button class="nav-item" onclick="nav('customers')">Customers</button>
+            <button class="nav-item" onclick="nav('conversations')">Conversations</button>
             <div class="nav-sep"></div>
-            <button class="nav-item" onclick="nav('products')"><span class="nav-icon">&#128722;</span>Products</button>
-            <button class="nav-item" onclick="nav('media')"><span class="nav-icon">&#127912;</span>Media</button>
-            <button class="nav-item" onclick="nav('knowledge')"><span class="nav-icon">&#128218;</span>Knowledge</button>
+            <button class="nav-item" onclick="nav('products')">Products</button>
+            <button class="nav-item" onclick="nav('media')">Media</button>
+            <button class="nav-item" onclick="nav('knowledge')">Knowledge</button>
             <div class="nav-sep"></div>
-            <button class="nav-item" onclick="nav('settings')"><span class="nav-icon">&#9881;</span>Settings</button>
-            <button class="nav-item" onclick="nav('security')"><span class="nav-icon">&#128274;</span>Security</button>
+            <button class="nav-item" onclick="nav('settings')">Settings</button>
+            <button class="nav-item" onclick="nav('security')">Security</button>
         </div>
 
         <div class="content">
             <!-- Overview -->
             <div class="panel active" id="p-overview">
                 <div id="planBanner"></div>
+                <div class="card" id="botControlCard" style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px">
+                    <div>
+                        <div style="font-size:14px;font-weight:600" id="botControlLabel">AI Bot is Active</div>
+                        <div style="font-size:12px;color:#86868b;margin-top:2px">Pause or resume your AI assistant</div>
+                    </div>
+                    <button class="btn" id="botToggleBtn" onclick="toggleBot()" style="min-width:120px;padding:10px 20px;font-size:13px;font-weight:600;border-radius:10px">Pause AI</button>
+                </div>
                 <div class="stats">
                     <div class="stat"><div class="stat-val" id="s-cust">—</div><div class="stat-lbl">Customers</div></div>
                     <div class="stat"><div class="stat-val" id="s-orders">—</div><div class="stat-lbl">Orders</div></div>
@@ -476,8 +481,21 @@ async function loadSettings() {
 function updateBotUI(paused) {
     const btn = document.getElementById('botStatusBtn');
     const lbl = document.getElementById('botStatusLabel');
-    if (paused) { btn.className = 'bot-status off'; lbl.textContent = 'Paused'; }
-    else { btn.className = 'bot-status on'; lbl.textContent = 'Active'; }
+    const toggleBtn = document.getElementById('botToggleBtn');
+    const controlLabel = document.getElementById('botControlLabel');
+    if (paused) {
+        btn.className = 'bot-status off'; lbl.textContent = 'Paused';
+        toggleBtn.textContent = 'Resume AI';
+        toggleBtn.style.background = '#34c759'; toggleBtn.style.color = '#fff';
+        controlLabel.textContent = 'AI Bot is Paused';
+        controlLabel.style.color = '#d32f2f';
+    } else {
+        btn.className = 'bot-status on'; lbl.textContent = 'Active';
+        toggleBtn.textContent = 'Pause AI';
+        toggleBtn.style.background = '#d32f2f'; toggleBtn.style.color = '#fff';
+        controlLabel.textContent = 'AI Bot is Active';
+        controlLabel.style.color = '#1d1d1f';
+    }
 }
 
 async function toggleBot() {
