@@ -31,6 +31,7 @@ try:
             ('custom_instructions', 'TEXT'),
             ('learned_knowledge', 'TEXT'),
             ('bot_paused', 'BOOLEAN DEFAULT FALSE'),
+            ('dashboard_pin', 'VARCHAR'),
         ]:
             if col_name not in seller_columns:
                 conn.execute(text(f"ALTER TABLE sellers ADD COLUMN {col_name} {col_type}"))

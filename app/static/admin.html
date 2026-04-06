@@ -7,187 +7,190 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #f5f5f7; color: #1d1d1f;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .topbar {
-            background: #1d1d1f; color: white;
-            padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 10;
-        }
-        .topbar-left { display: flex; align-items: center; gap: 16px; }
-        .logo { font-size: 17px; font-weight: 700; color: white; text-decoration: none; letter-spacing: -0.5px; }
-        .logo-tag { font-size: 11px; font-weight: 500; color: #86868b; background: #2d2d2f; padding: 2px 8px; border-radius: 4px; }
-
-        .layout { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #f5f5f7; color: #1d1d1f; -webkit-font-smoothing: antialiased; }
 
         /* Login */
-        .login-wrap {
-            max-width: 380px; margin: 120px auto; text-align: center;
-        }
-        .login-wrap h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-        .login-wrap p { font-size: 14px; color: #86868b; margin-bottom: 24px; }
-        .login-wrap input {
-            width: 100%; padding: 12px 16px; border: 1px solid #e8e8ed; border-radius: 10px;
-            font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px;
-        }
-        .login-wrap input:focus { border-color: #d32f2f; }
+        .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-box { text-align: center; max-width: 360px; width: 90%; }
+        .login-box h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .login-box .sub { font-size: 13px; color: #86868b; margin-bottom: 24px; }
+        .login-box input { width: 100%; padding: 12px 16px; border: 1px solid #e8e8ed; border-radius: 10px; font-size: 14px; outline: none; margin-bottom: 10px; }
+        .login-box input:focus { border-color: #d32f2f; }
+
+        /* Topbar */
+        .topbar { background: #1d1d1f; padding: 0 24px; height: 48px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+        .topbar-left { display: flex; align-items: center; gap: 12px; }
+        .logo { font-size: 15px; font-weight: 700; color: #fff; }
+        .logo-tag { font-size: 10px; font-weight: 600; color: #86868b; background: #2d2d2f; padding: 2px 8px; border-radius: 4px; }
+
+        /* Shell */
+        .shell { display: flex; min-height: calc(100vh - 48px); }
+        .sidebar { width: 180px; background: #1d1d1f; padding: 12px 0; flex-shrink: 0; }
+        .snav { display: block; padding: 8px 20px; font-size: 12px; font-weight: 500; color: #86868b; cursor: pointer; transition: all 0.1s; border: none; background: none; width: 100%; text-align: left; }
+        .snav:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .snav.active { color: #ff6b6b; background: rgba(255,107,107,0.1); }
+        .sdiv { height: 1px; background: #333; margin: 6px 16px; }
+
+        .main { flex: 1; padding: 24px 28px; max-width: 1000px; }
 
         /* Stats */
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
-        .stat-card {
-            background: #fff; border-radius: 14px; border: 1px solid #e8e8ed; padding: 20px;
-        }
-        .stat-value { font-size: 32px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.02em; }
-        .stat-label { font-size: 12px; color: #86868b; margin-top: 2px; }
+        .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 20px; }
+        .stat { background: #fff; border-radius: 10px; border: 1px solid #e8e8ed; padding: 14px; }
+        .stat-v { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+        .stat-l { font-size: 10px; color: #86868b; margin-top: 1px; font-weight: 500; text-transform: uppercase; }
 
-        /* Section */
-        .section-title {
-            font-size: 13px; font-weight: 600; color: #86868b; text-transform: uppercase;
-            letter-spacing: 0.04em; margin-bottom: 12px;
-        }
+        /* Cards */
+        .card { background: #fff; border-radius: 12px; border: 1px solid #e8e8ed; padding: 18px; margin-bottom: 12px; }
+        .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .card-title { font-size: 12px; font-weight: 600; color: #86868b; text-transform: uppercase; letter-spacing: 0.04em; }
 
-        /* Seller cards */
-        .seller-list { display: flex; flex-direction: column; gap: 10px; }
-        .seller-card {
-            background: #fff; border-radius: 14px; border: 1px solid #e8e8ed;
-            padding: 20px; display: flex; align-items: center; justify-content: space-between;
-            transition: box-shadow 0.15s;
-        }
-        .seller-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-        .seller-info { flex: 1; }
-        .seller-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-        .seller-meta { font-size: 12px; color: #86868b; display: flex; gap: 16px; flex-wrap: wrap; }
-        .seller-meta span { white-space: nowrap; }
-        .seller-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 16px; }
+        /* Seller rows */
+        .seller-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f0f0f2; }
+        .seller-row:last-child { border: none; }
+        .sr-info { flex: 1; }
+        .sr-name { font-size: 14px; font-weight: 600; }
+        .sr-badges { display: flex; gap: 4px; margin: 4px 0; flex-wrap: wrap; }
+        .sr-meta { font-size: 11px; color: #86868b; display: flex; gap: 12px; }
+        .sr-actions { display: flex; gap: 4px; flex-shrink: 0; margin-left: 12px; }
 
-        .badge {
-            display: inline-block; padding: 3px 10px; border-radius: 980px;
-            font-size: 11px; font-weight: 600;
-        }
-        .badge-active { background: #d4edda; color: #155724; }
-        .badge-inactive { background: #f8d7da; color: #721c24; }
-        .badge-trial { background: #fff3cd; color: #856404; }
-        .badge-paid { background: #cce5ff; color: #004085; }
-        .badge-expired { background: #e8e8ed; color: #6e6e73; }
-        .badge-paused { background: #ffeeba; color: #856404; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 980px; font-size: 10px; font-weight: 600; }
+        .b-active { background: #dcfce7; color: #166534; }
+        .b-blocked { background: #fee2e2; color: #991b1b; }
+        .b-trial { background: #fef3c7; color: #92400e; }
+        .b-paid { background: #dbeafe; color: #1e40af; }
+        .b-expired { background: #e8e8ed; color: #6e6e73; }
+        .b-paused { background: #fef3c7; color: #92400e; }
 
-        .btn {
-            padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 500;
-            border: 1px solid #e8e8ed; background: #fff; color: #1d1d1f;
-            cursor: pointer; transition: all 0.15s; white-space: nowrap;
-        }
+        .btn { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 500; border: 1px solid #e8e8ed; background: #fff; color: #1d1d1f; cursor: pointer; transition: all 0.1s; }
         .btn:hover { background: #f5f5f7; }
-        .btn-red { color: #d32f2f; border-color: #ffcdd2; }
-        .btn-red:hover { background: #fff5f5; }
-        .btn-green { color: #155724; border-color: #c3e6cb; }
-        .btn-green:hover { background: #f0fff0; }
-        .btn-primary {
-            background: #d32f2f; color: white; border: none; padding: 10px 20px;
-            border-radius: 980px; font-size: 14px; font-weight: 500; cursor: pointer;
-        }
-        .btn-primary:hover { background: #c62828; }
+        .btn-r { color: #d32f2f; border-color: #ffcdd2; }
+        .btn-r:hover { background: #fef2f2; }
+        .btn-g { color: #166534; border-color: #bbf7d0; }
+        .btn-g:hover { background: #f0fdf4; }
+        .btn-primary { background: #d32f2f; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+        .btn-primary:hover { background: #b71c1c; }
+
+        /* Activity */
+        .act-row { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f5f5f7; font-size: 11px; }
+        .act-shop { font-weight: 600; color: #d32f2f; min-width: 80px; }
+        .act-msg { flex: 1; color: #1d1d1f; }
+        .act-time { color: #86868b; flex-shrink: 0; }
+
+        /* Chat */
+        .chat-area { max-height: 350px; overflow-y: auto; background: #f5f5f7; border-radius: 8px; padding: 12px; }
+        .cb { max-width: 70%; padding: 6px 10px; border-radius: 10px; font-size: 12px; margin-bottom: 4px; line-height: 1.4; }
+        .cb-c { background: #e8e8ed; margin-right: auto; }
+        .cb-a { background: #d32f2f; color: #fff; margin-left: auto; }
 
         /* Modal */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.35); z-index: 50; align-items: center; justify-content: center;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal {
-            background: #fff; border-radius: 16px; padding: 28px; max-width: 420px; width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-        }
-        .modal h3 { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
-        .modal label { display: block; font-size: 13px; font-weight: 500; color: #6e6e73; margin-bottom: 6px; }
-        .modal select, .modal input {
-            width: 100%; padding: 10px 14px; border: 1px solid #e8e8ed; border-radius: 10px;
-            font-size: 14px; font-family: inherit; margin-bottom: 12px; outline: none;
-        }
-        .modal-actions { display: flex; gap: 8px; margin-top: 8px; }
+        .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 50; align-items: center; justify-content: center; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 14px; padding: 24px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+        .modal label { display: block; font-size: 12px; font-weight: 600; color: #6e6e73; margin-bottom: 4px; }
+        .modal select, .modal input { width: 100%; padding: 8px 12px; border: 1px solid #e8e8ed; border-radius: 8px; font-size: 13px; margin-bottom: 10px; outline: none; }
 
-        /* Toast */
-        .toast {
-            position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
-            background: #1d1d1f; color: white; border-radius: 10px;
-            font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s;
-            z-index: 100;
-        }
+        /* Panels */
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 8px 16px; background: #1d1d1f; color: #fff; border-radius: 8px; font-size: 11px; font-weight: 500; opacity: 0; transition: opacity 0.2s; z-index: 100; }
         .toast.show { opacity: 1; }
 
-        .empty-state { text-align: center; padding: 60px 20px; color: #86868b; }
-        .empty-state h3 { font-size: 18px; color: #1d1d1f; margin-bottom: 8px; }
+        .empty { text-align: center; padding: 40px; color: #86868b; font-size: 13px; }
 
-        @media (max-width: 768px) {
-            .stats { grid-template-columns: 1fr 1fr; }
-            .seller-card { flex-direction: column; align-items: flex-start; }
-            .seller-actions { margin-left: 0; margin-top: 12px; }
-        }
+        @media (max-width: 768px) { .sidebar { display: none; } .stats { grid-template-columns: repeat(3, 1fr); } .main { padding: 16px; } }
     </style>
 </head>
 <body>
 
-<!-- Login Screen -->
-<div id="loginScreen">
-    <div class="login-wrap">
-        <h2>Zen Labs Admin</h2>
-        <p>Enter admin key to access the control panel</p>
-        <input type="password" id="adminKeyInput" placeholder="Admin key" onkeydown="if(event.key==='Enter')login()">
-        <br>
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <h2>Zen Labs</h2>
+        <p class="sub">Admin Control Panel</p>
+        <input type="password" id="keyInput" placeholder="Admin key" onkeydown="if(event.key==='Enter')login()">
         <button class="btn-primary" onclick="login()" style="width:100%">Sign In</button>
     </div>
 </div>
 
-<!-- Main Panel -->
-<div id="mainPanel" style="display:none">
+<div id="app" style="display:none">
     <div class="topbar">
         <div class="topbar-left">
             <span class="logo">Zen Labs</span>
-            <span class="logo-tag">Admin</span>
+            <span class="logo-tag">ADMIN</span>
         </div>
     </div>
-
-    <div class="layout">
-        <!-- Stats -->
-        <div class="stats">
-            <div class="stat-card"><div class="stat-value" id="s-sellers">—</div><div class="stat-label">Total Sellers</div></div>
-            <div class="stat-card"><div class="stat-value" id="s-customers">—</div><div class="stat-label">Total Customers</div></div>
-            <div class="stat-card"><div class="stat-value" id="s-orders">—</div><div class="stat-label">Total Orders</div></div>
-            <div class="stat-card"><div class="stat-value" id="s-pending">—</div><div class="stat-label">Pending Orders</div></div>
-            <div class="stat-card"><div class="stat-value" id="s-active">—</div><div class="stat-label">Active Sellers</div></div>
-            <div class="stat-card"><div class="stat-value" id="s-messages">—</div><div class="stat-label">Today's Messages</div></div>
+    <div class="shell">
+        <div class="sidebar">
+            <button class="snav active" onclick="go('overview')">Overview</button>
+            <button class="snav" onclick="go('sellers')">Sellers</button>
+            <button class="snav" onclick="go('orders')">All Orders</button>
+            <div class="sdiv"></div>
+            <button class="snav" onclick="go('activity')">Live Activity</button>
+            <button class="snav" onclick="go('conversations')">Conversations</button>
         </div>
+        <div class="main">
+            <!-- Overview -->
+            <div class="panel active" id="v-overview">
+                <div class="stats">
+                    <div class="stat"><div class="stat-v" id="a-sellers">—</div><div class="stat-l">Sellers</div></div>
+                    <div class="stat"><div class="stat-v" id="a-active">—</div><div class="stat-l">Active</div></div>
+                    <div class="stat"><div class="stat-v" id="a-custs">—</div><div class="stat-l">Customers</div></div>
+                    <div class="stat"><div class="stat-v" id="a-orders">—</div><div class="stat-l">Orders</div></div>
+                    <div class="stat"><div class="stat-v" id="a-pending">—</div><div class="stat-l">Pending</div></div>
+                    <div class="stat"><div class="stat-v" id="a-msgs">—</div><div class="stat-l">Today Msgs</div></div>
+                </div>
+                <div class="card"><div class="card-head"><div class="card-title">Recent Activity</div></div><div id="overviewActivity" style="max-height:300px;overflow-y:auto"></div></div>
+            </div>
 
-        <!-- Sellers List -->
-        <div class="section-title">Connected Pages</div>
-        <div class="seller-list" id="sellerList"></div>
+            <!-- Sellers -->
+            <div class="panel" id="v-sellers">
+                <div class="card-head"><div class="card-title" style="font-size:15px;color:#1d1d1f">All Sellers</div></div>
+                <div class="card"><div id="sellerList"></div></div>
+            </div>
+
+            <!-- All Orders -->
+            <div class="panel" id="v-orders">
+                <div class="card-head"><div class="card-title" style="font-size:15px;color:#1d1d1f">All Orders</div></div>
+                <div class="card" id="allOrdersCard"></div>
+            </div>
+
+            <!-- Activity -->
+            <div class="panel" id="v-activity">
+                <div class="card-head"><div class="card-title" style="font-size:15px;color:#1d1d1f">Live Activity Feed</div>
+                    <button class="btn" onclick="loadActivity()">Refresh</button></div>
+                <div class="card"><div id="actFeed" style="max-height:500px;overflow-y:auto"></div></div>
+            </div>
+
+            <!-- Conversations -->
+            <div class="panel" id="v-conversations">
+                <div class="card-head"><div class="card-title" style="font-size:15px;color:#1d1d1f">Conversations</div></div>
+                <div class="card">
+                    <label>Select Seller</label>
+                    <select id="convSellerSelect" onchange="loadConvCustomers(this.value)" style="width:100%;padding:8px;border:1px solid #e8e8ed;border-radius:8px;font-size:13px;margin-bottom:12px"></select>
+                    <div id="convCustomerList"></div>
+                </div>
+                <div class="card" style="margin-top:12px">
+                    <div id="convHeader" style="font-size:13px;font-weight:600;margin-bottom:8px;color:#86868b">Select a conversation</div>
+                    <div class="chat-area" id="convMessages"><div class="empty">No conversation selected</div></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Plan Modal -->
-<div class="modal-overlay" id="planModal">
+<div class="modal-bg" id="planModal">
     <div class="modal">
         <h3>Set Subscription Plan</h3>
         <input type="hidden" id="planSellerId">
-        <div>
-            <label>Plan</label>
-            <select id="planSelect">
-                <option value="trial">Trial</option>
-                <option value="starter">Starter</option>
-                <option value="growth">Growth</option>
-                <option value="professional">Professional</option>
-            </select>
-        </div>
-        <div>
-            <label>Duration (days)</label>
-            <input type="number" id="planDays" value="30" min="1">
-        </div>
-        <div class="modal-actions">
+        <label>Plan</label>
+        <select id="planSelect"><option value="trial">Trial</option><option value="starter">Starter</option><option value="growth">Growth</option><option value="professional">Professional</option></select>
+        <label>Duration (days)</label>
+        <input type="number" id="planDays" value="30" min="1">
+        <div style="display:flex;gap:6px;margin-top:6px">
             <button class="btn-primary" onclick="savePlan()">Save</button>
-            <button class="btn" onclick="closePlanModal()">Cancel</button>
+            <button class="btn" onclick="closeModal()">Cancel</button>
         </div>
     </div>
 </div>
@@ -195,152 +198,119 @@
 <div class="toast" id="toast"></div>
 
 <script>
-let ADMIN_KEY = '';
+let KEY = '';
 const API = '/api/admin';
+let sellersCache = [];
 
-function toast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+function toast(m) { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function closeModal() { document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('show')); }
+function timeAgo(d) { const s=Math.floor((Date.now()-new Date(d))/1000); if(s<60)return 'now'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; }
+
+function go(name) {
+    document.querySelectorAll('.snav').forEach(n=>n.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('v-'+name).classList.add('active');
 }
 
-function login() {
-    ADMIN_KEY = document.getElementById('adminKeyInput').value.trim();
-    if (!ADMIN_KEY) return;
-    loadDashboard().then(() => {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('mainPanel').style.display = 'block';
-    }).catch(() => {
-        toast('Invalid admin key');
-    });
+function q(p) { const s=p.includes('?')?'&':'?'; return fetch(API+p+s+'key='+encodeURIComponent(KEY)).then(r=>{if(r.status===403)throw new Error('Forbidden');return r.json();}); }
+function qp(p) { const s=p.includes('?')?'&':'?'; return fetch(API+p+s+'key='+encodeURIComponent(KEY),{method:'POST'}).then(r=>r.json()); }
+function qd(p) { const s=p.includes('?')?'&':'?'; return fetch(API+p+s+'key='+encodeURIComponent(KEY),{method:'DELETE'}).then(r=>r.json()); }
+
+async function login() {
+    KEY = document.getElementById('keyInput').value.trim();
+    if(!KEY)return;
+    try { await loadDash(); document.getElementById('loginScreen').style.display='none'; document.getElementById('app').style.display='block'; loadSellers(); loadActivity(); loadAllOrders(); }
+    catch(e) { toast('Invalid key'); }
 }
 
-async function apiFetch(path) {
-    const sep = path.includes('?') ? '&' : '?';
-    const res = await fetch(API + path + sep + 'key=' + encodeURIComponent(ADMIN_KEY));
-    if (res.status === 403) throw new Error('Forbidden');
-    return res.json();
-}
-
-async function apiPost(path) {
-    const sep = path.includes('?') ? '&' : '?';
-    const res = await fetch(API + path + sep + 'key=' + encodeURIComponent(ADMIN_KEY), { method: 'POST' });
-    return res.json();
-}
-
-async function apiDelete(path) {
-    const sep = path.includes('?') ? '&' : '?';
-    const res = await fetch(API + path + sep + 'key=' + encodeURIComponent(ADMIN_KEY), { method: 'DELETE' });
-    return res.json();
-}
-
-async function loadDashboard() {
-    const data = await apiFetch('/dashboard');
-    const s = data.stats;
-    document.getElementById('s-sellers').textContent = s.total_sellers;
-    document.getElementById('s-customers').textContent = s.total_customers;
-    document.getElementById('s-orders').textContent = s.total_orders;
-    document.getElementById('s-pending').textContent = s.pending_orders;
-    document.getElementById('s-active').textContent = s.active_sellers;
-    document.getElementById('s-messages').textContent = s.today_messages;
-    await loadSellers();
+async function loadDash() {
+    const d = await q('/dashboard');
+    const s = d.stats;
+    document.getElementById('a-sellers').textContent = s.total_sellers;
+    document.getElementById('a-active').textContent = s.active_sellers;
+    document.getElementById('a-custs').textContent = s.total_customers;
+    document.getElementById('a-orders').textContent = s.total_orders;
+    document.getElementById('a-pending').textContent = s.pending_orders;
+    document.getElementById('a-msgs').textContent = s.today_messages;
 }
 
 async function loadSellers() {
-    const sellers = await apiFetch('/sellers');
-    const list = document.getElementById('sellerList');
+    sellersCache = await q('/sellers');
+    const el = document.getElementById('sellerList');
+    // Populate conversation dropdown too
+    const sel = document.getElementById('convSellerSelect');
+    sel.innerHTML = '<option value="">— Select —</option>' + sellersCache.map(s=>`<option value="${s.id}">${s.fb_page_name||'Unnamed'}</option>`).join('');
 
-    if (!sellers.length) {
-        list.innerHTML = '<div class="empty-state"><h3>No sellers yet</h3><p>Sellers will appear here once they onboard via the connect flow.</p></div>';
-        return;
-    }
-
-    list.innerHTML = sellers.map(s => {
-        const now = new Date();
-        const expires = s.plan_expires_at ? new Date(s.plan_expires_at) : null;
-        const isExpired = expires && expires < now;
-        const daysLeft = expires ? Math.ceil((expires - now) / (1000 * 60 * 60 * 24)) : null;
-
-        let planBadge = '';
-        if (s.plan === 'trial') {
-            planBadge = isExpired
-                ? '<span class="badge badge-expired">Trial Expired</span>'
-                : `<span class="badge badge-trial">Trial (${daysLeft}d left)</span>`;
-        } else {
-            planBadge = isExpired
-                ? '<span class="badge badge-expired">' + s.plan + ' Expired</span>'
-                : `<span class="badge badge-paid">${s.plan} (${daysLeft}d left)</span>`;
-        }
-
-        const statusBadge = s.is_active
-            ? '<span class="badge badge-active">Active</span>'
-            : '<span class="badge badge-inactive">Blocked</span>';
-
-        const pausedBadge = s.bot_paused
-            ? ' <span class="badge badge-paused">Bot Paused</span>'
-            : '';
-
-        return `
-        <div class="seller-card">
-            <div class="seller-info">
-                <div class="seller-name">${s.fb_page_name || 'Unnamed Page'}</div>
-                <div style="display:flex;gap:6px;margin:6px 0;flex-wrap:wrap">
-                    ${statusBadge} ${planBadge}${pausedBadge}
-                </div>
-                <div class="seller-meta">
-                    <span>${s.products} products</span>
-                    <span>${s.customers} customers</span>
-                    <span>${s.orders} orders</span>
-                    <span>Since ${s.created_at ? new Date(s.created_at).toLocaleDateString() : '—'}</span>
-                </div>
-            </div>
-            <div class="seller-actions">
-                <button class="btn" onclick="openPlanModal('${s.id}', '${s.plan}')">Plan</button>
-                ${s.is_active
-                    ? `<button class="btn btn-red" onclick="toggleActive('${s.id}', false)">Block</button>`
-                    : `<button class="btn btn-green" onclick="toggleActive('${s.id}', true)">Unblock</button>`
-                }
-                <button class="btn" onclick="openDashboard('${s.id}')">Dashboard</button>
-                <button class="btn btn-red" onclick="deleteSeller('${s.id}', '${(s.fb_page_name || '').replace(/'/g, '')}')">Delete</button>
-            </div>
-        </div>`;
+    if (!sellersCache.length) { el.innerHTML = '<div class="empty">No sellers yet</div>'; return; }
+    el.innerHTML = sellersCache.map(s => {
+        const exp = s.plan_expires_at ? new Date(s.plan_expires_at) : null;
+        const isExp = exp && exp < new Date();
+        const days = exp ? Math.max(0, Math.ceil((exp - new Date()) / 86400000)) : 0;
+        let planB = s.plan === 'trial'
+            ? (isExp ? '<span class="badge b-expired">Trial Expired</span>' : `<span class="badge b-trial">Trial ${days}d</span>`)
+            : (isExp ? `<span class="badge b-expired">${s.plan} Expired</span>` : `<span class="badge b-paid">${s.plan} ${days}d</span>`);
+        return `<div class="seller-row"><div class="sr-info">
+            <div class="sr-name">${s.fb_page_name||'Unnamed'}</div>
+            <div class="sr-badges">${s.is_active?'<span class="badge b-active">Active</span>':'<span class="badge b-blocked">Blocked</span>'} ${planB} ${s.bot_paused?'<span class="badge b-paused">Bot Paused</span>':''}</div>
+            <div class="sr-meta"><span>${s.products} products</span><span>${s.customers} customers</span><span>${s.orders} orders</span><span>${s.created_at?new Date(s.created_at).toLocaleDateString():''}</span></div>
+        </div><div class="sr-actions">
+            <button class="btn" onclick="openPlan('${s.id}','${s.plan}')">Plan</button>
+            <button class="btn" onclick="adminToggleBot('${s.id}')">Bot</button>
+            ${s.is_active?`<button class="btn btn-r" onclick="toggle('${s.id}',false)">Block</button>`:`<button class="btn btn-g" onclick="toggle('${s.id}',true)">Unblock</button>`}
+            <button class="btn" onclick="window.open('/dashboard?seller_id=${s.id}','_blank')">Dash</button>
+            <button class="btn btn-r" onclick="del('${s.id}','${(s.fb_page_name||'').replace(/'/g,'')}')">Del</button>
+        </div></div>`;
     }).join('');
 }
 
-async function toggleActive(sellerId, activate) {
-    const action = activate ? 'activate' : 'deactivate';
-    const data = await apiPost('/sellers/' + sellerId + '/' + action);
-    toast(data.message);
-    await loadSellers();
+async function toggle(id, act) { const d = await qp('/sellers/'+id+'/'+(act?'activate':'deactivate')); toast(d.message); loadSellers(); loadDash(); }
+async function adminToggleBot(id) { const d = await qp('/sellers/'+id+'/toggle-bot'); toast(d.message); loadSellers(); }
+function openPlan(id, plan) { document.getElementById('planSellerId').value=id; document.getElementById('planSelect').value=plan; document.getElementById('planDays').value=30; document.getElementById('planModal').classList.add('show'); }
+async function savePlan() { const id=document.getElementById('planSellerId').value; const d=await qp('/sellers/'+id+'/set-plan?plan='+document.getElementById('planSelect').value+'&days='+document.getElementById('planDays').value); toast(d.message); closeModal(); loadSellers(); loadDash(); }
+async function del(id, name) { if(!confirm('Permanently delete "'+name+'"?'))return; const d=await qd('/sellers/'+id); toast(d.message); loadSellers(); loadDash(); }
+
+async function loadActivity() {
+    const items = await q('/activity');
+    const render = (el, data) => {
+        el.innerHTML = data.map(a=>`<div class="act-row"><div class="act-shop">${a.shop}</div><div class="act-msg"><b>${a.customer}:</b> ${a.message}</div><div class="act-time">${timeAgo(a.time)}</div></div>`).join('') || '<div class="empty">No activity</div>';
+    };
+    render(document.getElementById('actFeed'), items);
+    render(document.getElementById('overviewActivity'), items.slice(0, 15));
 }
 
-function openPlanModal(sellerId, currentPlan) {
-    document.getElementById('planSellerId').value = sellerId;
-    document.getElementById('planSelect').value = currentPlan;
-    document.getElementById('planDays').value = 30;
-    document.getElementById('planModal').classList.add('show');
-}
-function closePlanModal() { document.getElementById('planModal').classList.remove('show'); }
-
-async function savePlan() {
-    const sellerId = document.getElementById('planSellerId').value;
-    const plan = document.getElementById('planSelect').value;
-    const days = document.getElementById('planDays').value;
-    const data = await apiPost('/sellers/' + sellerId + '/set-plan?plan=' + plan + '&days=' + days);
-    toast(data.message);
-    closePlanModal();
-    await loadSellers();
-}
-
-async function deleteSeller(sellerId, name) {
-    if (!confirm('Permanently delete "' + name + '" and all their data? This cannot be undone.')) return;
-    const data = await apiDelete('/sellers/' + sellerId);
-    toast(data.message);
-    await loadDashboard();
+async function loadAllOrders() {
+    let allOrders = [];
+    for (const s of (sellersCache.length ? sellersCache : await q('/sellers'))) {
+        try {
+            const orders = await fetch('/api/seller/'+s.id+'/orders').then(r=>r.json());
+            orders.forEach(o => o._shop = s.fb_page_name);
+            allOrders = allOrders.concat(orders);
+        } catch(e) {}
+    }
+    allOrders.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    const el = document.getElementById('allOrdersCard');
+    if (!allOrders.length) { el.innerHTML = '<div class="empty">No orders</div>'; return; }
+    el.innerHTML = '<table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid #e8e8ed;font-size:10px;color:#86868b">Shop</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e8e8ed;font-size:10px;color:#86868b">Customer</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e8e8ed;font-size:10px;color:#86868b">Items</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e8e8ed;font-size:10px;color:#86868b">Status</th><th style="text-align:left;padding:6px;border-bottom:1px solid #e8e8ed;font-size:10px;color:#86868b">Date</th></tr></thead><tbody>' +
+        allOrders.slice(0,50).map(o=>`<tr><td style="padding:6px;border-bottom:1px solid #f5f5f7">${o._shop||''}</td><td style="padding:6px;border-bottom:1px solid #f5f5f7">${o.customer_name||'—'}</td><td style="padding:6px;border-bottom:1px solid #f5f5f7">${(o.items||[]).map(i=>i.product_name).join(', ')}</td><td style="padding:6px;border-bottom:1px solid #f5f5f7"><span class="badge b-${o.status==='pending'?'trial':o.status==='confirmed'?'active':'expired'}">${o.status}</span></td><td style="padding:6px;border-bottom:1px solid #f5f5f7;color:#86868b">${new Date(o.created_at).toLocaleDateString()}</td></tr>`).join('') +
+        '</tbody></table>';
 }
 
-function openDashboard(sellerId) {
-    window.open('/dashboard?seller_id=' + sellerId, '_blank');
+async function loadConvCustomers(sellerId) {
+    if (!sellerId) { document.getElementById('convCustomerList').innerHTML = ''; return; }
+    const convs = await q('/sellers/'+sellerId+'/conversations');
+    document.getElementById('convCustomerList').innerHTML = convs.map(c=>`<div style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;border-bottom:1px solid #f5f5f7" onclick="loadConvMsgs('${sellerId}','${c.customer_id}','${(c.customer_name||'').replace(/'/g,'')}')">
+        <div style="width:28px;height:28px;border-radius:50%;background:#e8e8ed;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#6e6e73">${(c.customer_name||'?')[0]}</div>
+        <div style="flex:1"><div style="font-size:12px;font-weight:600">${c.customer_name}</div><div style="font-size:10px;color:#86868b">${c.last_message}</div></div>
+        <div style="font-size:10px;color:#86868b">${timeAgo(c.last_time)}</div></div>`).join('') || '<div class="empty">No conversations</div>';
+}
+
+async function loadConvMsgs(sellerId, custId, name) {
+    document.getElementById('convHeader').textContent = name;
+    const msgs = await q('/sellers/'+sellerId+'/conversations/'+custId);
+    const el = document.getElementById('convMessages');
+    el.innerHTML = msgs.map(m=>`<div style="display:flex;flex-direction:column;align-items:${m.sender==='customer'?'flex-start':'flex-end'}"><div class="cb ${m.sender==='customer'?'cb-c':'cb-a'}">${m.message}</div></div>`).join('') || '<div class="empty">Empty</div>';
+    el.scrollTop = el.scrollHeight;
 }
 </script>
 </body>

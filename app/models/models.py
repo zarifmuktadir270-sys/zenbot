@@ -37,6 +37,7 @@ class Seller(Base):
 
     is_active = Column(Boolean, default=True)
     bot_paused = Column(Boolean, default=False)  # Seller can pause/resume bot
+    dashboard_pin = Column(String)  # Hashed PIN for dashboard security
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     products = relationship("Product", back_populates="seller")

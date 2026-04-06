@@ -3,16 +3,26 @@ Seller Dashboard API — Routes for sellers to manage their shop, view orders, e
 """
 
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
+import hashlib
 
 from app.models.database import get_db
 from app.models.models import Seller, Product, Customer, Order, Conversation, Media
 from app.services.page_scraper import scrape_and_save_products
 
 router = APIRouter(prefix="/api/seller", tags=["seller"])
+
+
+def verify_seller_pin(seller: Seller, pin: str) -> bool:
+    """Verify seller's dashboard PIN."""
+    stored = getattr(seller, "dashboard_pin", None)
+    if not stored:
+        return True  # No PIN set = open access (backward compat)
+    return hashlib.sha256(pin.encode()).hexdigest() == stored
 
 
 # === REQUEST MODELS ===
@@ -242,6 +252,117 @@ async def get_conversations(seller_id: str, customer_id: str = None, db: Session
     ]
 
 
+@router.get("/{seller_id}/customers")
+async def get_customers(seller_id: str, db: Session = Depends(get_db)):
+    """Get all customers for a seller with their stats."""
+    customers = db.query(Customer).filter(Customer.seller_id == seller_id).order_by(Customer.created_at.desc()).all()
+    result = []
+    for c in customers:
+        msg_count = db.query(Conversation).filter(
+            Conversation.seller_id == seller_id,
+            Conversation.customer_id == c.id,
+            Conversation.sender == "customer",
+        ).count()
+        last_msg = db.query(Conversation).filter(
+            Conversation.seller_id == seller_id,
+            Conversation.customer_id == c.id,
+        ).order_by(Conversation.created_at.desc()).first()
+
+        result.append({
+            "id": c.id,
+            "name": c.name or "Unknown",
+            "phone": c.phone,
+            "address": c.address,
+            "total_orders": c.total_orders or 0,
+            "total_messages": msg_count,
+            "last_active": last_msg.created_at.isoformat() if last_msg else None,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        })
+    return result
+
+
+@router.get("/{seller_id}/conversations/{customer_id}")
+async def get_customer_conversation(seller_id: str, customer_id: str, db: Session = Depends(get_db)):
+    """Get full conversation history with a specific customer."""
+    messages = db.query(Conversation).filter(
+        Conversation.seller_id == seller_id,
+        Conversation.customer_id == customer_id,
+    ).order_by(Conversation.created_at.asc()).limit(200).all()
+    return [
+        {
+            "id": m.id,
+            "sender": m.sender,
+            "message": m.message,
+            "intent": m.intent,
+            "created_at": m.created_at.isoformat(),
+        }
+        for m in messages
+    ]
+
+
+@router.post("/{seller_id}/set-pin")
+async def set_dashboard_pin(seller_id: str, pin: str = "", db: Session = Depends(get_db)):
+    """Set or update the dashboard PIN for security."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+
+    if pin:
+        seller.dashboard_pin = hashlib.sha256(pin.encode()).hexdigest()
+    else:
+        seller.dashboard_pin = None
+    db.commit()
+    return {"message": "PIN updated" if pin else "PIN removed"}
+
+
+@router.post("/{seller_id}/verify-pin")
+async def verify_pin(seller_id: str, pin: str = "", db: Session = Depends(get_db)):
+    """Verify seller dashboard PIN."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+
+    if not getattr(seller, "dashboard_pin", None):
+        return {"valid": True, "has_pin": False}
+
+    valid = verify_seller_pin(seller, pin)
+    return {"valid": valid, "has_pin": True}
+
+
+@router.get("/{seller_id}/activity")
+async def get_activity(seller_id: str, db: Session = Depends(get_db)):
+    """Get recent activity feed for the seller."""
+    # Recent conversations
+    recent_msgs = db.query(Conversation).filter(
+        Conversation.seller_id == seller_id,
+        Conversation.sender == "customer",
+    ).order_by(Conversation.created_at.desc()).limit(20).all()
+
+    # Recent orders
+    recent_orders = db.query(Order).filter(
+        Order.seller_id == seller_id,
+    ).order_by(Order.created_at.desc()).limit(10).all()
+
+    activity = []
+    for m in recent_msgs:
+        customer = db.query(Customer).filter(Customer.id == m.customer_id).first()
+        activity.append({
+            "type": "message",
+            "text": f"{customer.name or 'Customer'}: {m.message[:80]}",
+            "intent": m.intent,
+            "time": m.created_at.isoformat(),
+        })
+    for o in recent_orders:
+        activity.append({
+            "type": "order",
+            "text": f"Order #{o.id[:8]} — {o.customer_name} ({o.status})",
+            "time": o.created_at.isoformat(),
+        })
+
+    activity.sort(key=lambda x: x["time"], reverse=True)
+    return activity[:30]
+
+
 @router.get("/{seller_id}/settings")
 async def get_settings(seller_id: str, db: Session = Depends(get_db)):
     """Get all seller settings for the dashboard."""
@@ -257,7 +378,13 @@ async def get_settings(seller_id: str, db: Session = Depends(get_db)):
         "delivery_time": seller.delivery_time or "",
         "return_policy": seller.return_policy or "",
         "fb_page_name": seller.fb_page_name,
+        "fb_page_id": seller.fb_page_id,
         "bot_paused": getattr(seller, "bot_paused", False),
+        "has_pin": bool(getattr(seller, "dashboard_pin", None)),
+        "plan": seller.plan,
+        "plan_expires_at": seller.plan_expires_at.isoformat() if seller.plan_expires_at else None,
+        "is_active": seller.is_active,
+        "created_at": seller.created_at.isoformat() if seller.created_at else None,
     }
 
 
