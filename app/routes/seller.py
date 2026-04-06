@@ -13,7 +13,7 @@ import hashlib
 import base64
 
 from app.models.database import get_db
-from app.models.models import Seller, Product, Customer, Order, Conversation, Media
+from app.models.models import Seller, Product, Customer, Order, Conversation, Media, Coupon, has_feature, PLAN_FEATURES
 from app.services.page_scraper import scrape_and_save_products
 from app.config import settings as app_settings
 
@@ -48,6 +48,7 @@ class SellerUpdate(BaseModel):
     bot_name: Optional[str] = None
     bot_personality: Optional[str] = None
     custom_instructions: Optional[str] = None
+    welcome_message: Optional[str] = None
 
 
 class ProductUpdate(BaseModel):
@@ -129,7 +130,7 @@ async def update_settings(seller_id: str, data: SellerUpdate, db: Session = Depe
     if not seller:
         raise HTTPException(status_code=404, detail="Seller not found")
 
-    for field in ["delivery_info", "payment_methods", "delivery_time", "return_policy", "bot_name", "bot_personality", "custom_instructions"]:
+    for field in ["delivery_info", "payment_methods", "delivery_time", "return_policy", "bot_name", "bot_personality", "custom_instructions", "welcome_message"]:
         val = getattr(data, field, None)
         if val is not None:
             setattr(seller, field, val)
@@ -376,6 +377,7 @@ async def get_settings(seller_id: str, db: Session = Depends(get_db)):
     return {
         "bot_name": getattr(seller, "bot_name", "") or "AI Assistant",
         "bot_personality": getattr(seller, "bot_personality", "") or "friendly",
+        "welcome_message": getattr(seller, "welcome_message", "") or "",
         "custom_instructions": getattr(seller, "custom_instructions", "") or "",
         "learned_knowledge": getattr(seller, "learned_knowledge", "") or "",
         "delivery_info": seller.delivery_info or "",
@@ -562,3 +564,261 @@ async def delete_media(seller_id: str, media_id: str, db: Session = Depends(get_
     db.delete(media)
     db.commit()
     return {"message": "Media deleted"}
+
+
+# === CUSTOMER TAGS (Starter+) ===
+
+@router.put("/{seller_id}/customers/{customer_id}/tags")
+async def update_customer_tags(seller_id: str, customer_id: str, tags: str = "", notes: str = None, db: Session = Depends(get_db)):
+    customer = db.query(Customer).filter(Customer.id == customer_id, Customer.seller_id == seller_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    customer.tags = tags
+    if notes is not None:
+        customer.notes = notes
+    db.commit()
+    return {"message": "Customer updated"}
+
+
+# === EXPORT ORDERS CSV (Starter+) ===
+
+@router.get("/{seller_id}/orders/export")
+async def export_orders_csv(seller_id: str, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    if not has_feature(seller.plan, "export_csv"):
+        raise HTTPException(status_code=403, detail="Upgrade to Starter plan for CSV export")
+
+    orders = db.query(Order).filter(Order.seller_id == seller_id).order_by(Order.created_at.desc()).all()
+    import csv, io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Order ID", "Customer", "Phone", "Address", "Items", "Amount", "Payment", "Coupon", "Discount", "Status", "Date"])
+    for o in orders:
+        items = ", ".join([i.get("product_name", "?") for i in (o.items or [])])
+        writer.writerow([
+            o.id[:8], o.customer_name or "", o.customer_phone or "", o.customer_address or "",
+            items, o.total_amount or 0, o.payment_method or "",
+            getattr(o, 'coupon_code', '') or '', getattr(o, 'discount_amount', 0) or 0,
+            o.status, o.created_at.isoformat() if o.created_at else "",
+        ])
+    return Response(content=output.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f"attachment; filename=orders_{seller_id[:8]}.csv"})
+
+
+# === BROADCAST (Growth+) ===
+
+class BroadcastInput(BaseModel):
+    message: str
+
+@router.post("/{seller_id}/broadcast")
+async def broadcast_message(seller_id: str, data: BroadcastInput, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    if not has_feature(seller.plan, "broadcast"):
+        raise HTTPException(status_code=403, detail="Upgrade to Growth plan for broadcast")
+
+    from app.utils.facebook import send_message as fb_send
+    customers = db.query(Customer).filter(Customer.seller_id == seller_id).all()
+    sent = 0
+    failed = 0
+    for c in customers:
+        try:
+            await fb_send(c.fb_user_id, data.message, seller.fb_page_access_token)
+            sent += 1
+        except Exception:
+            failed += 1
+    return {"message": f"Broadcast sent to {sent} customers ({failed} failed)", "sent": sent, "failed": failed}
+
+
+# === REPLY FROM DASHBOARD (Growth+) ===
+
+class ReplyInput(BaseModel):
+    message: str
+
+@router.post("/{seller_id}/customers/{customer_id}/reply")
+async def reply_to_customer(seller_id: str, customer_id: str, data: ReplyInput, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    if not has_feature(seller.plan, "dashboard_reply"):
+        raise HTTPException(status_code=403, detail="Upgrade to Growth plan for dashboard reply")
+
+    customer = db.query(Customer).filter(Customer.id == customer_id, Customer.seller_id == seller_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    from app.utils.facebook import send_message as fb_send
+    await fb_send(customer.fb_user_id, data.message, seller.fb_page_access_token)
+
+    # Save to conversation
+    db.add(Conversation(seller_id=seller_id, customer_id=customer_id, sender="seller", message=data.message, intent="manual_reply"))
+    db.commit()
+    return {"message": "Reply sent"}
+
+
+# === ANALYTICS (Growth+) ===
+
+@router.get("/{seller_id}/analytics")
+async def get_analytics(seller_id: str, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    if not has_feature(seller.plan, "analytics"):
+        raise HTTPException(status_code=403, detail="Upgrade to Growth plan for analytics")
+
+    from sqlalchemy import func as sqlfunc
+
+    now = datetime.now(timezone.utc)
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+
+    # Revenue
+    total_revenue = db.query(sqlfunc.sum(Order.total_amount)).filter(
+        Order.seller_id == seller_id, Order.status != "cancelled"
+    ).scalar() or 0
+    month_revenue = db.query(sqlfunc.sum(Order.total_amount)).filter(
+        Order.seller_id == seller_id, Order.status != "cancelled", Order.created_at >= month_ago
+    ).scalar() or 0
+    week_revenue = db.query(sqlfunc.sum(Order.total_amount)).filter(
+        Order.seller_id == seller_id, Order.status != "cancelled", Order.created_at >= week_ago
+    ).scalar() or 0
+
+    # Orders per day (last 7 days)
+    daily_orders = []
+    for i in range(7):
+        day_start = (now - timedelta(days=6-i)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        count = db.query(Order).filter(
+            Order.seller_id == seller_id, Order.created_at >= day_start, Order.created_at < day_end
+        ).count()
+        daily_orders.append({"date": day_start.strftime("%m/%d"), "orders": count})
+
+    # Messages per day (last 7 days)
+    daily_messages = []
+    for i in range(7):
+        day_start = (now - timedelta(days=6-i)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        count = db.query(Conversation).filter(
+            Conversation.seller_id == seller_id, Conversation.sender == "customer",
+            Conversation.created_at >= day_start, Conversation.created_at < day_end
+        ).count()
+        daily_messages.append({"date": day_start.strftime("%m/%d"), "messages": count})
+
+    # Top products
+    top_products = []
+    orders_with_items = db.query(Order).filter(Order.seller_id == seller_id, Order.status != "cancelled").all()
+    product_counts = {}
+    for o in orders_with_items:
+        for item in (o.items or []):
+            name = item.get("product_name", "Unknown")
+            product_counts[name] = product_counts.get(name, 0) + 1
+    for name, count in sorted(product_counts.items(), key=lambda x: -x[1])[:5]:
+        top_products.append({"name": name, "orders": count})
+
+    return {
+        "revenue": {"total": total_revenue, "month": month_revenue, "week": week_revenue},
+        "daily_orders": daily_orders,
+        "daily_messages": daily_messages,
+        "top_products": top_products,
+        "total_orders": db.query(Order).filter(Order.seller_id == seller_id).count(),
+        "total_customers": db.query(Customer).filter(Customer.seller_id == seller_id).count(),
+    }
+
+
+# === COUPONS (Growth+) ===
+
+class CouponCreate(BaseModel):
+    code: str
+    discount_type: str = "percentage"
+    discount_value: float
+    min_order: float = 0
+    max_uses: int = -1
+
+@router.get("/{seller_id}/coupons")
+async def get_coupons(seller_id: str, db: Session = Depends(get_db)):
+    coupons = db.query(Coupon).filter(Coupon.seller_id == seller_id).order_by(Coupon.created_at.desc()).all()
+    return [{
+        "id": c.id, "code": c.code, "discount_type": c.discount_type,
+        "discount_value": c.discount_value, "min_order": c.min_order,
+        "max_uses": c.max_uses, "used_count": c.used_count, "is_active": c.is_active,
+        "expires_at": c.expires_at.isoformat() if c.expires_at else None,
+    } for c in coupons]
+
+@router.post("/{seller_id}/coupons")
+async def create_coupon(seller_id: str, data: CouponCreate, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    if not has_feature(seller.plan, "coupons"):
+        raise HTTPException(status_code=403, detail="Upgrade to Growth plan for coupons")
+
+    coupon = Coupon(
+        seller_id=seller_id, code=data.code.upper(),
+        discount_type=data.discount_type, discount_value=data.discount_value,
+        min_order=data.min_order, max_uses=data.max_uses,
+    )
+    db.add(coupon)
+    db.commit()
+    return {"id": coupon.id, "message": f"Coupon {coupon.code} created"}
+
+@router.delete("/{seller_id}/coupons/{coupon_id}")
+async def delete_coupon(seller_id: str, coupon_id: str, db: Session = Depends(get_db)):
+    coupon = db.query(Coupon).filter(Coupon.id == coupon_id, Coupon.seller_id == seller_id).first()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    db.delete(coupon)
+    db.commit()
+    return {"message": "Coupon deleted"}
+
+
+# === PLAN INFO ===
+
+@router.get("/{seller_id}/plan-info")
+async def get_plan_info(seller_id: str, db: Session = Depends(get_db)):
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+    plan = seller.plan or "trial"
+    features = PLAN_FEATURES.get(plan, PLAN_FEATURES["trial"])["features"]
+    return {
+        "current_plan": plan,
+        "features": features,
+        "plans": {k: {"price_bdt": v["price_bdt"], "features": v["features"]} for k, v in PLAN_FEATURES.items()},
+    }
+
+
+# === FOLLOW-UP CRON (Starter+) ===
+
+@router.get("/{seller_id}/cron/followup")
+async def cron_followup(seller_id: str, db: Session = Depends(get_db)):
+    """Send follow-up messages for orders placed 24+ hours ago."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller or not has_feature(seller.plan, "auto_followup"):
+        return {"message": "Feature not available"}
+
+    from app.utils.facebook import send_message as fb_send
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    orders = db.query(Order).filter(
+        Order.seller_id == seller_id,
+        Order.followed_up == False,
+        Order.status == "confirmed",
+        Order.created_at <= cutoff,
+    ).limit(10).all()
+
+    sent = 0
+    for o in orders:
+        customer = db.query(Customer).filter(Customer.id == o.customer_id).first()
+        if customer:
+            msg = f"Hi {customer.name or 'there'}! Your order #{o.id[:8]} is confirmed and being prepared. We'll update you when it ships. Thanks for shopping with {seller.fb_page_name}!"
+            try:
+                await fb_send(customer.fb_user_id, msg, seller.fb_page_access_token)
+                o.followed_up = True
+                sent += 1
+            except Exception as e:
+                print(f"Follow-up failed: {e}")
+    db.commit()
+    return {"message": f"Sent {sent} follow-ups"}

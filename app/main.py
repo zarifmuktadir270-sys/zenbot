@@ -23,27 +23,63 @@ Base.metadata.create_all(bind=engine)
 from sqlalchemy import text, inspect
 try:
     inspector = inspect(engine)
-    seller_columns = [c['name'] for c in inspector.get_columns('sellers')]
+    tables = inspector.get_table_names()
     with engine.connect() as conn:
-        for col_name, col_type in [
-            ('admin_fb_user_id', 'VARCHAR'),
-            ('bot_name', 'VARCHAR'),
-            ('custom_instructions', 'TEXT'),
-            ('learned_knowledge', 'TEXT'),
-            ('bot_paused', 'BOOLEAN DEFAULT FALSE'),
-            ('dashboard_pin', 'VARCHAR'),
-            ('bot_personality', "VARCHAR DEFAULT 'friendly'"),
-        ]:
-            if col_name not in seller_columns:
-                conn.execute(text(f"ALTER TABLE sellers ADD COLUMN {col_name} {col_type}"))
+        # Sellers
+        if 'sellers' in tables:
+            seller_cols = [c['name'] for c in inspector.get_columns('sellers')]
+            for col_name, col_type in [
+                ('admin_fb_user_id', 'VARCHAR'), ('bot_name', 'VARCHAR'),
+                ('custom_instructions', 'TEXT'), ('learned_knowledge', 'TEXT'),
+                ('bot_paused', 'BOOLEAN DEFAULT FALSE'), ('dashboard_pin', 'VARCHAR'),
+                ('bot_personality', "VARCHAR DEFAULT 'friendly'"),
+                ('welcome_message', 'TEXT'),
+            ]:
+                if col_name not in seller_cols:
+                    conn.execute(text(f"ALTER TABLE sellers ADD COLUMN {col_name} {col_type}"))
 
-        product_columns = [c['name'] for c in inspector.get_columns('products')]
-        if 'stock' not in product_columns:
-            conn.execute(text("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT -1"))
+        # Products
+        if 'products' in tables:
+            prod_cols = [c['name'] for c in inspector.get_columns('products')]
+            if 'stock' not in prod_cols:
+                conn.execute(text("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT -1"))
 
-        media_columns = [c['name'] for c in inspector.get_columns('media')]
-        if 'file_data' not in media_columns:
-            conn.execute(text("ALTER TABLE media ADD COLUMN file_data TEXT"))
+        # Media
+        if 'media' in tables:
+            media_cols = [c['name'] for c in inspector.get_columns('media')]
+            if 'file_data' not in media_cols:
+                conn.execute(text("ALTER TABLE media ADD COLUMN file_data TEXT"))
+
+        # Customers
+        if 'customers' in tables:
+            cust_cols = [c['name'] for c in inspector.get_columns('customers')]
+            for col_name, col_type in [
+                ('tags', "VARCHAR DEFAULT ''"), ('is_welcomed', 'BOOLEAN DEFAULT FALSE'),
+                ('last_order_followed_up', 'VARCHAR'),
+            ]:
+                if col_name not in cust_cols:
+                    conn.execute(text(f"ALTER TABLE customers ADD COLUMN {col_name} {col_type}"))
+
+        # Orders
+        if 'orders' in tables:
+            order_cols = [c['name'] for c in inspector.get_columns('orders')]
+            for col_name, col_type in [
+                ('coupon_code', 'VARCHAR'), ('discount_amount', 'FLOAT DEFAULT 0'),
+                ('followed_up', 'BOOLEAN DEFAULT FALSE'),
+            ]:
+                if col_name not in order_cols:
+                    conn.execute(text(f"ALTER TABLE orders ADD COLUMN {col_name} {col_type}"))
+
+        # Coupons table
+        if 'coupons' not in tables:
+            conn.execute(text("""CREATE TABLE IF NOT EXISTS coupons (
+                id VARCHAR PRIMARY KEY, seller_id VARCHAR REFERENCES sellers(id),
+                code VARCHAR NOT NULL, discount_type VARCHAR DEFAULT 'percentage',
+                discount_value FLOAT NOT NULL, min_order FLOAT DEFAULT 0,
+                max_uses INTEGER DEFAULT -1, used_count INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT TRUE, expires_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"""))
 
         conn.commit()
 except Exception as e:

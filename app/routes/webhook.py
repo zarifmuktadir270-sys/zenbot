@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from app.config import settings
 from app.models.database import get_db, Base, engine
-from app.models.models import Seller, Customer, Product, Media
+from app.models.models import Seller, Customer, Product, Media, Order, has_feature
 from app.services.ai_agent import get_ai_response
 from app.utils.facebook import (
     send_message,
@@ -17,12 +17,12 @@ from app.utils.facebook import (
     send_product_cards,
     send_private_reply,
     send_media_message,
+    send_quick_replies,
     get_user_profile,
     verify_webhook_signature,
 )
 
 
-# Track processed message IDs to prevent duplicate replies
 class ProcessedMessage(Base):
     __tablename__ = "processed_messages"
     mid = Column(String, primary_key=True)
@@ -68,7 +68,6 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
                 if message.get("is_echo"):
                     continue
 
-                # Deduplication
                 mid = message.get("mid")
                 if mid:
                     existing = db.query(ProcessedMessage).filter(ProcessedMessage.mid == mid).first()
@@ -82,7 +81,6 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
 
                 sender_id = event["sender"]["id"]
 
-                # Handle voice messages, images, videos, stickers
                 if not message.get("text"):
                     try:
                         await handle_non_text_message(db, page_id, sender_id, message)
@@ -96,7 +94,7 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
                 except Exception as e:
                     print(f"MESSAGE HANDLER ERROR: {traceback.format_exc()}")
 
-            # Handle comments on posts (feed webhook)
+            # Handle comments on posts
             for change in entry.get("changes", []):
                 if change.get("field") != "feed":
                     continue
@@ -129,8 +127,8 @@ async def receive_message(request: Request, db: Session = Depends(get_db)):
     return {"status": "ok"}
 
 
+# === COMMENT AUTO-REPLY ===
 async def handle_comment(db: Session, page_id: str, value: dict):
-    """When someone comments on a post, send them a private DM via Messenger."""
     seller = db.query(Seller).filter(Seller.fb_page_id == page_id).first()
     if not seller:
         return
@@ -140,27 +138,25 @@ async def handle_comment(db: Session, page_id: str, value: dict):
     commenter_name = value.get("from", {}).get("name", "")
     post_id = value.get("post_id", "")
 
-    # Find matching product from the post
-    product_info = ""
+    product = None
     if post_id:
         product = db.query(Product).filter(
             Product.seller_id == seller.id,
             Product.fb_post_id == post_id,
             Product.is_available == True,
         ).first()
-        if product:
-            product_info = f"\n\nProduct: {product.name}"
-            if product.price_text or product.price:
-                product_info += f"\nPrice: {product.price_text or str(product.price) + ' BDT'}"
 
-    # Build a friendly DM
-    dm_text = (
-        f"Hi {commenter_name}! {seller.fb_page_name} এ আপনার comment দেখেছি। "
-        f"ধন্যবাদ!"
-    )
-    if product_info:
-        dm_text += product_info
-    dm_text += "\n\nকোনো প্রশ্ন থাকলে এখানে message করুন, আমি সাহায্য করব!"
+    # Build smart auto-reply based on comment content
+    dm_text = f"Hi {commenter_name}! Thanks for your interest in {seller.fb_page_name}!"
+    if product:
+        dm_text += f"\n\nProduct: {product.name}"
+        if product.price_text or product.price:
+            dm_text += f"\nPrice: {product.price_text or str(int(product.price)) + ' BDT'}"
+        if product.stock is not None and product.stock == 0:
+            dm_text += "\n(Currently out of stock)"
+        else:
+            dm_text += "\nThis item is available!"
+    dm_text += "\n\nMessage me here if you want to order or have any questions!"
 
     try:
         await send_private_reply(comment_id, dm_text, seller.fb_page_access_token)
@@ -169,93 +165,59 @@ async def handle_comment(db: Session, page_id: str, value: dict):
 
 
 async def handle_non_text_message(db: Session, page_id: str, sender_id: str, message: dict):
-    """Handle voice messages, images, videos, stickers, etc."""
-
     seller = db.query(Seller).filter(Seller.fb_page_id == page_id).first()
     if not seller:
         return
 
-    # Detect message type
     attachments = message.get("attachments", [])
     if not attachments:
         return
 
     msg_type = attachments[0].get("type", "media")
 
-    # Send appropriate response based on type
-    if msg_type == "audio":
-        reply = (
-            "দুঃখিত, আমি এখনো voice message শুনতে পারি না। 🎤\n"
-            "Please আপনার message টা text এ লিখে পাঠান। ধন্যবাদ!"
-        )
-    elif msg_type == "image":
-        reply = (
-            "Photo পেয়েছি! 📸\n"
-            "কোন product সম্পর্কে জানতে চান? আমাকে লিখে জানান।"
-        )
-    elif msg_type == "video":
-        reply = "Video পেয়েছি! 🎥 আপনার question টা text এ লিখে পাঠান please।"
-    elif msg_type == "file":
-        reply = "File পেয়েছি! 📄 কিভাবে সাহায্য করতে পারি?"
-    else:
-        reply = "আমি শুধু text message reply করতে পারি। 💬 Please লিখে পাঠান।"
-
+    replies = {
+        "audio": "Sorry, I can't listen to voice messages yet. Please type your message instead!",
+        "image": "Got your photo! What product are you asking about? Please type it out.",
+        "video": "Got your video! Please type your question and I'll help you.",
+        "file": "Got your file! How can I help you?",
+    }
+    reply = replies.get(msg_type, "I can only reply to text messages. Please type your question!")
     await send_message(sender_id, reply, seller.fb_page_access_token)
 
 
+# === MAIN MESSAGE HANDLER ===
 async def handle_customer_message(db: Session, page_id: str, sender_id: str, message_text: str):
-    """Process a single customer message and send AI response."""
-
     seller = db.query(Seller).filter(Seller.fb_page_id == page_id).first()
     if not seller:
-        print(f"No seller found for page {page_id}")
         return
 
-    # === SUBSCRIPTION CHECK ===
     if not seller.is_active:
-        print(f"Seller {seller.fb_page_name} is deactivated. Ignoring message.")
         return
 
-    # Check if bot is paused by seller
     if seller.bot_paused:
-        print(f"Bot is paused for {seller.fb_page_name}. Ignoring message.")
         return
 
     now = datetime.now(timezone.utc)
-
-    # Check if plan has expired (handle naive datetimes from DB)
     plan_exp = seller.plan_expires_at
     if plan_exp and plan_exp.tzinfo is None:
         plan_exp = plan_exp.replace(tzinfo=timezone.utc)
     if plan_exp and now > plan_exp:
-        if seller.plan == "trial":
-            # Trial expired — send one-time message and stop
-            await send_message(
-                sender_id,
-                "দুঃখিত, এই shop এর trial period শেষ হয়ে গেছে। "
-                "Shop owner শীঘ্রই service renew করবেন। ধন্যবাদ!",
-                seller.fb_page_access_token
-            )
-            print(f"Trial expired for {seller.fb_page_name}")
-            return
-        elif seller.plan in ("starter", "growth", "professional"):
-            # Paid plan expired — send message and stop
-            await send_message(
-                sender_id,
-                "দুঃখিত, এই shop এর subscription renew হয়নি। "
-                "Shop owner এর সাথে যোগাযোগ করুন। ধন্যবাদ!",
-                seller.fb_page_access_token
-            )
-            print(f"Subscription expired for {seller.fb_page_name}")
-            return
+        await send_message(
+            sender_id,
+            "Sorry, this shop's subscription has expired. Please contact the shop owner directly. Thanks!",
+            seller.fb_page_access_token
+        )
+        return
 
     await send_typing_indicator(sender_id, seller.fb_page_access_token)
 
+    # Get or create customer
     customer = db.query(Customer).filter(
         Customer.seller_id == seller.id,
         Customer.fb_user_id == sender_id,
     ).first()
 
+    is_new_customer = False
     if not customer:
         profile = await get_user_profile(sender_id, seller.fb_page_access_token)
         customer = Customer(
@@ -266,17 +228,33 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
         db.add(customer)
         db.commit()
         db.refresh(customer)
+        is_new_customer = True
 
+    # === WELCOME MESSAGE (Trial+) ===
+    if is_new_customer or not getattr(customer, 'is_welcomed', False):
+        welcome = getattr(seller, 'welcome_message', '') or ''
+        if welcome:
+            await send_message(sender_id, welcome, seller.fb_page_access_token)
+            customer.is_welcomed = True
+            db.commit()
+
+    # === ORDER TRACKING (Trial+) ===
+    lower_msg = message_text.lower().strip()
+    if any(kw in lower_msg for kw in ['order status', 'track order', 'order track', 'my order', 'amar order', 'order ki holo']):
+        await handle_order_tracking(db, seller, customer, sender_id)
+        return
+
+    # === AI RESPONSE ===
     try:
         result = get_ai_response(db, seller, customer, message_text)
     except Exception as e:
         print(f"AI error: {e}")
         result = {
-            "reply": "একটু wait করুন, আপনাকে শীঘ্রই reply দেওয়া হবে। ধন্যবাদ!",
+            "reply": "Please wait, someone will reply to you shortly. Thanks!",
             "needs_human": True,
         }
 
-    # Send AI reply — ensure no raw JSON gets sent to customer
+    # Send AI reply — ensure no raw JSON
     reply_text = result.get("reply", "")
     if reply_text:
         reply_text = reply_text.strip()
@@ -291,15 +269,20 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
                 if m:
                     reply_text = m.group(1).replace('\\"', '"').replace('\\n', '\n')
                 else:
-                    reply_text = "দুঃখিত, একটু সমস্যা হয়েছে। আবার message দিন please!"
+                    reply_text = "Sorry, something went wrong. Please message again!"
+
+    # === QUICK REPLY BUTTONS (Trial+) ===
+    if has_feature(seller.plan, "quick_replies") and result.get("intent") in ("greeting", "general"):
+        quick = ["View Products", "Track Order", "Contact Owner"]
+        await send_quick_replies(sender_id, reply_text, quick, seller.fb_page_access_token)
+    elif reply_text:
         await send_message(sender_id, reply_text, seller.fb_page_access_token)
 
-    # Send product cards with images if AI requested
+    # Send product cards
     show_products = result.get("show_products")
-    if show_products and isinstance(show_products, list) and len(show_products) > 0:
+    if show_products and isinstance(show_products, list):
         products = db.query(Product).filter(
-            Product.seller_id == seller.id,
-            Product.is_available == True,
+            Product.seller_id == seller.id, Product.is_available == True,
         ).all()
         cards = []
         for idx in show_products:
@@ -313,62 +296,83 @@ async def handle_customer_message(db: Session, page_id: str, sender_id: str, mes
         if cards:
             await send_product_cards(sender_id, cards, seller.fb_page_access_token)
 
-    # Send media if AI requested
+    # Send media
     send_media_ids = result.get("send_media")
-    if send_media_ids and isinstance(send_media_ids, list) and len(send_media_ids) > 0:
-        media_list = db.query(Media).filter(
-            Media.seller_id == seller.id,
-        ).all()
+    if send_media_ids and isinstance(send_media_ids, list):
+        media_list = db.query(Media).filter(Media.seller_id == seller.id).all()
         for idx in send_media_ids:
             if 1 <= idx <= len(media_list):
                 m = media_list[idx - 1]
                 await send_media_message(sender_id, m.url, m.media_type, seller.fb_page_access_token)
 
-    # If a new order was created, send confirmation + notify seller
+    # Order created — send confirmation
     new_order = result.get("new_order")
     if new_order:
-        # Send order confirmation to customer
         confirmation = (
-            f"✅ আপনার Order Confirm হয়েছে!\n"
-            f"━━━━━━━━━━━━━━━\n"
-            f"📋 Order ID: #{new_order['id']}\n"
-            f"📦 Product: {new_order['product']}\n"
-            f"👤 নাম: {new_order['customer_name']}\n"
-            f"📱 Phone: {new_order['phone']}\n"
-            f"📍 Address: {new_order['address']}\n"
-            f"💳 Payment: {new_order['payment_method']}\n"
-            f"━━━━━━━━━━━━━━━\n"
-            f"আমরা শীঘ্রই আপনার order process করব। ধন্যবাদ!"
+            f"Order Confirmed!\n"
+            f"-------------------\n"
+            f"Order ID: #{new_order['id']}\n"
+            f"Product: {new_order['product']}\n"
+            f"Name: {new_order['customer_name']}\n"
+            f"Phone: {new_order['phone']}\n"
+            f"Address: {new_order['address']}\n"
+            f"Payment: {new_order['payment_method']}\n"
+            f"-------------------\n"
+            f"We'll process your order soon. Thanks!"
         )
         await send_message(sender_id, confirmation, seller.fb_page_access_token)
-
-        # Notify seller (send to page's admin via page conversation)
         await notify_seller_new_order(seller, customer, new_order)
 
-    # Log if needs human
     if result.get("needs_human"):
-        print(f"[NEEDS ATTENTION] Customer: {customer.name or sender_id} | Message: {message_text}")
+        print(f"[NEEDS ATTENTION] {customer.name or sender_id}: {message_text}")
 
 
+# === ORDER TRACKING ===
+async def handle_order_tracking(db: Session, seller: Seller, customer: Customer, sender_id: str):
+    orders = db.query(Order).filter(
+        Order.seller_id == seller.id,
+        Order.customer_id == customer.id,
+    ).order_by(Order.created_at.desc()).limit(3).all()
+
+    if not orders:
+        await send_message(sender_id, "You don't have any orders yet. Want to browse our products?", seller.fb_page_access_token)
+        return
+
+    status_text = {
+        "pending": "Pending (waiting for confirmation)",
+        "confirmed": "Confirmed (being prepared)",
+        "shipped": "Shipped (on the way!)",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled",
+    }
+
+    msg = "Your recent orders:\n"
+    for o in orders:
+        items = ", ".join([i.get("product_name", "?") for i in (o.items or [])]) or "N/A"
+        s = status_text.get(o.status, o.status)
+        msg += f"\n#{o.id[:8]} - {items}\nStatus: {s}\n"
+
+    await send_message(sender_id, msg, seller.fb_page_access_token)
+
+
+# === SELLER NOTIFICATION ===
 async def notify_seller_new_order(seller: Seller, customer: Customer, order: dict):
-    """Send order notification to seller's admin."""
-    # If seller has admin_fb_user_id, notify them directly
     admin_id = getattr(seller, 'admin_fb_user_id', None)
     if not admin_id:
-        print(f"[NEW ORDER] #{order['id']} | {order['product']} | {order['customer_name']} | {order['phone']}")
+        print(f"[NEW ORDER] #{order['id']} | {order['product']} | {order['customer_name']}")
         return
 
     notification = (
-        f"🔔 নতুন Order এসেছে!\n"
-        f"━━━━━━━━━━━━━━━\n"
-        f"📋 Order ID: #{order['id']}\n"
-        f"📦 Product: {order['product']}\n"
-        f"👤 Customer: {order['customer_name']}\n"
-        f"📱 Phone: {order['phone']}\n"
-        f"📍 Address: {order['address']}\n"
-        f"💳 Payment: {order['payment_method']}\n"
-        f"━━━━━━━━━━━━━━━\n"
-        f"Order confirm করতে dashboard এ যান।"
+        f"NEW ORDER!\n"
+        f"-------------------\n"
+        f"Order ID: #{order['id']}\n"
+        f"Product: {order['product']}\n"
+        f"Customer: {order['customer_name']}\n"
+        f"Phone: {order['phone']}\n"
+        f"Address: {order['address']}\n"
+        f"Payment: {order['payment_method']}\n"
+        f"-------------------\n"
+        f"Go to dashboard to confirm."
     )
 
     try:
