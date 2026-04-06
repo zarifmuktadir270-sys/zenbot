@@ -13,7 +13,7 @@ import hashlib
 import base64
 
 from app.models.database import get_db
-from app.models.models import Seller, Product, Customer, Order, Conversation, Media, Coupon, has_feature, PLAN_FEATURES
+from app.models.models import Seller, Product, Customer, Order, Conversation, Media, Coupon, PlanRequest, has_feature, PLAN_FEATURES
 from app.services.page_scraper import scrape_and_save_products
 from app.config import settings as app_settings
 
@@ -822,3 +822,85 @@ async def cron_followup(seller_id: str, db: Session = Depends(get_db)):
                 print(f"Follow-up failed: {e}")
     db.commit()
     return {"message": f"Sent {sent} follow-ups"}
+
+
+# === PLAN UPGRADE REQUEST ===
+
+class UpgradeRequest(BaseModel):
+    plan: str
+    payment_method: str = "bkash"
+    transaction_id: str
+
+@router.post("/{seller_id}/upgrade-request")
+async def request_upgrade(seller_id: str, data: UpgradeRequest, db: Session = Depends(get_db)):
+    """Submit a plan upgrade request with payment transaction ID."""
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+
+    if data.plan not in PLAN_FEATURES:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+
+    if not data.transaction_id.strip():
+        raise HTTPException(status_code=400, detail="Transaction ID is required")
+
+    # Check for duplicate transaction ID
+    existing = db.query(PlanRequest).filter(PlanRequest.transaction_id == data.transaction_id.strip()).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="This transaction ID has already been submitted")
+
+    amount = PLAN_FEATURES[data.plan]["price_bdt"]
+    req = PlanRequest(
+        seller_id=seller_id,
+        requested_plan=data.plan,
+        payment_method=data.payment_method,
+        transaction_id=data.transaction_id.strip(),
+        amount_bdt=amount,
+    )
+    db.add(req)
+    db.commit()
+    return {"message": f"Upgrade request submitted! We will verify your payment and activate your plan within a few hours.", "request_id": req.id}
+
+
+@router.get("/{seller_id}/upgrade-requests")
+async def get_upgrade_requests(seller_id: str, db: Session = Depends(get_db)):
+    """Get all upgrade requests for a seller."""
+    requests = db.query(PlanRequest).filter(PlanRequest.seller_id == seller_id).order_by(PlanRequest.created_at.desc()).all()
+    return [{
+        "id": r.id, "requested_plan": r.requested_plan,
+        "payment_method": r.payment_method, "transaction_id": r.transaction_id,
+        "amount_bdt": r.amount_bdt, "status": r.status,
+        "admin_note": r.admin_note, "created_at": r.created_at.isoformat(),
+    } for r in requests]
+
+
+# === ADMIN: ACTIVATE PLAN ===
+
+@router.put("/{seller_id}/activate-plan")
+async def activate_plan(seller_id: str, plan: str, days: int = 30, admin_key: str = "", db: Session = Depends(get_db)):
+    """Admin endpoint to activate a seller's plan."""
+    from app.config import settings as cfg
+    if admin_key != getattr(cfg, 'admin_secret', 'zenbot_admin_2024'):
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    seller = db.query(Seller).filter(Seller.id == seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+
+    if plan not in PLAN_FEATURES:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+
+    seller.plan = plan
+    seller.plan_expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+    seller.is_active = True
+    db.commit()
+
+    # Mark any pending requests as approved
+    pending = db.query(PlanRequest).filter(
+        PlanRequest.seller_id == seller_id, PlanRequest.status == "pending"
+    ).all()
+    for r in pending:
+        r.status = "approved"
+    db.commit()
+
+    return {"message": f"Plan activated: {plan} for {days} days", "expires_at": seller.plan_expires_at.isoformat()}

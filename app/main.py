@@ -70,6 +70,16 @@ try:
                 if col_name not in order_cols:
                     conn.execute(text(f"ALTER TABLE orders ADD COLUMN {col_name} {col_type}"))
 
+        # Plan requests table
+        if 'plan_requests' not in tables:
+            conn.execute(text("""CREATE TABLE IF NOT EXISTS plan_requests (
+                id VARCHAR PRIMARY KEY, seller_id VARCHAR REFERENCES sellers(id),
+                requested_plan VARCHAR NOT NULL, payment_method VARCHAR DEFAULT 'bkash',
+                transaction_id VARCHAR NOT NULL, amount_bdt FLOAT DEFAULT 0,
+                status VARCHAR DEFAULT 'pending', admin_note TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"""))
+
         # Coupons table
         if 'coupons' not in tables:
             conn.execute(text("""CREATE TABLE IF NOT EXISTS coupons (

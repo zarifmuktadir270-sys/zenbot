@@ -106,7 +106,20 @@
         .chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
         .chart-col .bar{width:100%;background:#d32f2f;border-radius:4px 4px 0 0;min-height:2px;transition:height .3s}
         .chart-col .lbl{font-size:9px;color:#86868b}
-        @media(max-width:768px){.sidebar{display:none}.stats{grid-template-columns:repeat(2,1fr)}.content{padding:16px}.grid{grid-template-columns:1fr}}
+        .plan-card{background:#fff;border:2px solid #e8e8ed;border-radius:14px;padding:20px;text-align:center;transition:all .15s;position:relative}
+        .plan-card:hover{border-color:#ccc}
+        .plan-card.current{border-color:#d32f2f;background:#fef2f2}
+        .plan-card .plan-card-name{font-size:15px;font-weight:700;margin-bottom:2px}
+        .plan-card .plan-card-price{font-size:24px;font-weight:700;color:#d32f2f;margin:8px 0}
+        .plan-card .plan-card-price span{font-size:12px;font-weight:400;color:#86868b}
+        .plan-card .plan-card-features{text-align:left;font-size:11px;color:#6e6e73;margin:12px 0;line-height:1.8}
+        .plan-card .plan-card-features div::before{content:'';display:inline-block;width:4px;height:4px;background:#34c759;border-radius:50%;margin-right:6px;vertical-align:middle}
+        .plan-card .current-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#d32f2f;color:#fff;font-size:10px;font-weight:600;padding:2px 10px;border-radius:980px}
+        .status-badge{display:inline-block;padding:2px 8px;border-radius:980px;font-size:10px;font-weight:600}
+        .status-badge.pending{background:#fef3c7;color:#92400e}
+        .status-badge.approved{background:#dcfce7;color:#166534}
+        .status-badge.rejected{background:#fee2e2;color:#991b1b}
+        @media(max-width:768px){.sidebar{display:none}.stats{grid-template-columns:repeat(2,1fr)}.content{padding:16px}.grid{grid-template-columns:1fr}#planCards{grid-template-columns:1fr 1fr !important}}
     </style>
 </head>
 <body>
@@ -149,6 +162,7 @@
             <button class="nav-item" onclick="nav('coupons')" id="navCoupons">Coupons<span class="lock-tag" id="lockCoupons"></span></button>
             <button class="nav-item" onclick="nav('broadcast')" id="navBroadcast">Broadcast<span class="lock-tag" id="lockBroadcast"></span></button>
             <div class="nav-sep"></div>
+            <button class="nav-item" onclick="nav('billing')">Billing</button>
             <button class="nav-item" onclick="nav('settings')">Settings</button>
             <button class="nav-item" onclick="nav('security')">Security</button>
         </div>
@@ -289,6 +303,39 @@
                 </div>
             </div>
 
+            <!-- Billing -->
+            <div class="panel" id="p-billing">
+                <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Plan & Billing</div></div>
+                <div id="currentPlanCard" class="card" style="margin-bottom:18px"></div>
+                <div id="planCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px"></div>
+                <div class="card" id="upgradeFormCard" style="display:none">
+                    <div class="card-title" style="margin-bottom:10px">Payment Details</div>
+                    <div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px">
+                        <div style="font-weight:600;margin-bottom:6px">Send payment to:</div>
+                        <div style="margin-bottom:4px"><b>bKash:</b> 01XXXXXXXXX (Personal)</div>
+                        <div style="margin-bottom:4px"><b>Nagad:</b> 01XXXXXXXXX (Personal)</div>
+                        <div style="margin-bottom:4px"><b>Bank:</b> Zen Labs - DBBL A/C 1234567890</div>
+                        <div style="margin-top:6px;color:#92400e">Send the exact amount shown on your selected plan. Include your shop name in the reference.</div>
+                    </div>
+                    <input type="hidden" id="upgradePlan" value="">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <div class="field"><label>Payment Method</label>
+                            <select id="upgradePayMethod"><option value="bkash">bKash</option><option value="nagad">Nagad</option><option value="bank">Bank Transfer</option></select>
+                        </div>
+                        <div class="field"><label>Transaction ID / TrxID</label><input type="text" id="upgradeTrxId" placeholder="e.g. TRX8A2K4M9"></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="submitUpgrade()">Submit Payment</button>
+                        <button class="btn btn-secondary" onclick="cancelUpgrade()">Cancel</button>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:14px">
+                    <div class="card-title" style="margin-bottom:10px">Payment History</div>
+                    <div class="table-wrap"><table><thead><tr><th>Plan</th><th>Method</th><th>TrxID</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody id="paymentHistory"></tbody></table></div>
+                </div>
+            </div>
+
             <!-- Settings -->
             <div class="panel" id="p-settings">
                 <div class="card-head"><div class="card-title" style="font-size:16px;color:#1d1d1f">Bot Settings</div></div>
@@ -348,6 +395,7 @@ function nav(name){
     document.getElementById('p-'+name).classList.add('active');
     if(name==='analytics') loadAnalytics();
     if(name==='coupons') loadCoupons();
+    if(name==='billing') loadBilling();
 }
 
 // === PIN ===
@@ -372,7 +420,7 @@ async function loadSettings(){
     updateBotUI(d.bot_paused);
     const p=d.bot_personality||'friendly';const radio=document.querySelector(`input[name="personality"][value="${p}"]`);if(radio)radio.checked=true;
     const exp=d.plan_expires_at?new Date(d.plan_expires_at):null;const days=exp?Math.max(0,Math.ceil((exp-new Date())/86400000)):0;
-    document.getElementById('planBanner').innerHTML=`<div class="plan-banner"><div><div class="plan-name">${d.plan.charAt(0).toUpperCase()+d.plan.slice(1)} Plan</div><div class="plan-exp">${days>0?days+' days remaining':'Expired'}</div></div><div class="plan-tag">${d.is_active?'Active':'Inactive'}</div></div>`;
+    document.getElementById('planBanner').innerHTML=`<div class="plan-banner" style="cursor:pointer" onclick="document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('p-billing').classList.add('active');loadBilling()"><div><div class="plan-name">${d.plan.charAt(0).toUpperCase()+d.plan.slice(1)} Plan</div><div class="plan-exp">${days>0?days+' days remaining':'Expired'} - Click to manage</div></div><div class="plan-tag">${d.is_active?'Active':'Inactive'}</div></div>`;
     document.getElementById('pinStatus').innerHTML=d.has_pin?'<span style="color:#34c759">PIN is active</span>':'<span style="color:#86868b">No PIN set</span>';
     document.getElementById('secPageId').textContent=d.fb_page_id||'-';
     document.getElementById('secSellerId').textContent=SID;
@@ -522,6 +570,88 @@ async function sendBroadcast(){
     const d=await res.json();
     if(res.ok){document.getElementById('broadcastResult').innerHTML=`<span style="color:#34c759">Sent to ${d.sent} customers${d.failed?' ('+d.failed+' failed)':''}</span>`;document.getElementById('broadcastMsg').value=''}
     else{document.getElementById('broadcastResult').innerHTML=`<span style="color:#d32f2f">${d.detail||'Failed'}</span>`}
+}
+
+// === BILLING ===
+const PLAN_NAMES = {trial:'Trial',starter:'Starter',growth:'Growth',professional:'Professional'};
+const PLAN_PRICES = {trial:0,starter:2999,growth:5999,professional:9999};
+const PLAN_FEATURE_LABELS = {
+    welcome_message:'Welcome Message',quick_replies:'Quick Reply Buttons',order_tracking:'Order Tracking',
+    auto_comment_reply:'Auto Comment Reply',auto_followup:'Auto Follow-up',product_categories:'Product Categories',
+    customer_tags:'Customer Tags',export_csv:'CSV Export',broadcast:'Broadcast Messages',analytics:'Sales Analytics',
+    dashboard_reply:'Reply from Dashboard',sound_notifications:'Sound Notifications',coupons:'Coupon Codes',
+    invoices:'Invoice Generation',whatsapp:'WhatsApp Integration'
+};
+
+async function loadBilling(){
+    const res=await fetch(API+'/plan-info');const d=await res.json();
+    const cur=d.current_plan;
+    const planOrder=['trial','starter','growth','professional'];
+    const curIdx=planOrder.indexOf(cur);
+
+    // Current plan card
+    const exp=SETTINGS.plan_expires_at?new Date(SETTINGS.plan_expires_at):null;
+    const days=exp?Math.max(0,Math.ceil((exp-new Date())/86400000)):0;
+    document.getElementById('currentPlanCard').innerHTML=`
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+                <div style="font-size:11px;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:.04em">Current Plan</div>
+                <div style="font-size:22px;font-weight:700;margin-top:4px">${PLAN_NAMES[cur]}</div>
+                <div style="font-size:12px;color:#86868b;margin-top:2px">${days>0?days+' days remaining':(cur==='trial'?'Trial expired':'Expired')}</div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-size:22px;font-weight:700;color:#d32f2f">${PLAN_PRICES[cur].toLocaleString()} BDT</div>
+                <div style="font-size:11px;color:#86868b">${cur==='trial'?'Free':'per month'}</div>
+            </div>
+        </div>`;
+
+    // Plan cards
+    document.getElementById('planCards').innerHTML=planOrder.map(p=>{
+        const isCur=p===cur;
+        const features=d.plans[p].features;
+        const price=d.plans[p].price_bdt;
+        const canUpgrade=planOrder.indexOf(p)>curIdx;
+        return`<div class="plan-card ${isCur?'current':''}">
+            ${isCur?'<div class="current-tag">Current</div>':''}
+            <div class="plan-card-name">${PLAN_NAMES[p]}</div>
+            <div class="plan-card-price">${price===0?'Free':''+price.toLocaleString()+' <span>BDT/mo</span>'}</div>
+            <div class="plan-card-features">${features.map(f=>'<div>'+(PLAN_FEATURE_LABELS[f]||f)+'</div>').join('')}</div>
+            ${canUpgrade?'<button class="btn btn-primary" style="width:100%" onclick="startUpgrade(\''+p+'\','+price+')">Upgrade</button>':''}
+            ${isCur?'<div style="font-size:11px;color:#34c759;font-weight:600;margin-top:8px">Active</div>':''}
+            ${!canUpgrade&&!isCur?'<div style="font-size:11px;color:#86868b;margin-top:8px">-</div>':''}
+        </div>`}).join('');
+
+    loadPaymentHistory();
+}
+
+function startUpgrade(plan,price){
+    document.getElementById('upgradePlan').value=plan;
+    document.getElementById('upgradeFormCard').style.display='block';
+    document.getElementById('upgradeFormCard').scrollIntoView({behavior:'smooth'});
+    document.getElementById('upgradeFormCard').querySelector('.card-title').textContent='Payment for '+PLAN_NAMES[plan]+' Plan - '+price.toLocaleString()+' BDT';
+}
+function cancelUpgrade(){document.getElementById('upgradeFormCard').style.display='none'}
+
+async function submitUpgrade(){
+    const plan=document.getElementById('upgradePlan').value;
+    const method=document.getElementById('upgradePayMethod').value;
+    const trxId=document.getElementById('upgradeTrxId').value.trim();
+    if(!trxId)return toast('Enter your transaction ID');
+    const res=await fetch(API+'/upgrade-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan,payment_method:method,transaction_id:trxId})});
+    const d=await res.json();
+    if(res.ok){toast(d.message);cancelUpgrade();document.getElementById('upgradeTrxId').value='';loadPaymentHistory()}
+    else{toast(d.detail||'Failed')}
+}
+
+async function loadPaymentHistory(){
+    const res=await fetch(API+'/upgrade-requests');const reqs=await res.json();
+    document.getElementById('paymentHistory').innerHTML=reqs.map(r=>`<tr>
+        <td style="font-weight:600">${PLAN_NAMES[r.requested_plan]||r.requested_plan}</td>
+        <td>${r.payment_method}</td><td>${r.transaction_id}</td>
+        <td>${r.amount_bdt.toLocaleString()} BDT</td>
+        <td><span class="status-badge ${r.status}">${r.status}</span></td>
+        <td style="font-size:11px;color:#86868b">${new Date(r.created_at).toLocaleDateString()}</td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:#86868b;padding:20px">No payment history</td></tr>';
 }
 
 // === INIT ===

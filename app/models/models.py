@@ -173,6 +173,20 @@ class Media(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class PlanRequest(Base):
+    __tablename__ = "plan_requests"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    seller_id = Column(String, ForeignKey("sellers.id"), nullable=False)
+    requested_plan = Column(String, nullable=False)
+    payment_method = Column(String, default="bkash")  # bkash, nagad, bank
+    transaction_id = Column(String, nullable=False)
+    amount_bdt = Column(Float, default=0)
+    status = Column(String, default="pending")  # pending, approved, rejected
+    admin_note = Column(Text)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 class Coupon(Base):
     __tablename__ = "coupons"
 

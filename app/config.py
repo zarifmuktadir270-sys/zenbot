@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # App
     app_url: str = "http://localhost:8000"
     port: int = 8000
+    admin_secret: str = "zenbot_admin_2024"
 
     class Config:
         env_file = ".env"

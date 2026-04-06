@@ -8,7 +8,7 @@ from sqlalchemy import func
 from datetime import datetime, timezone, timedelta
 
 from app.models.database import get_db
-from app.models.models import Seller, Product, Customer, Order, Conversation, Media
+from app.models.models import Seller, Product, Customer, Order, Conversation, Media, PlanRequest
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -216,3 +216,58 @@ async def admin_toggle_bot(seller_id: str, key: str = "", db: Session = Depends(
     seller.bot_paused = not getattr(seller, "bot_paused", False)
     db.commit()
     return {"message": f"Bot {'paused' if seller.bot_paused else 'resumed'} for {seller.fb_page_name}", "bot_paused": seller.bot_paused}
+
+
+@router.get("/upgrade-requests")
+async def admin_upgrade_requests(key: str = "", db: Session = Depends(get_db)):
+    """View all pending upgrade requests across sellers."""
+    check_key(key)
+    requests = db.query(PlanRequest).order_by(PlanRequest.created_at.desc()).limit(50).all()
+    result = []
+    for r in requests:
+        seller = db.query(Seller).filter(Seller.id == r.seller_id).first()
+        result.append({
+            "id": r.id, "seller_id": r.seller_id,
+            "shop_name": seller.fb_page_name if seller else "?",
+            "current_plan": seller.plan if seller else "?",
+            "requested_plan": r.requested_plan,
+            "payment_method": r.payment_method,
+            "transaction_id": r.transaction_id,
+            "amount_bdt": r.amount_bdt,
+            "status": r.status,
+            "created_at": r.created_at.isoformat(),
+        })
+    return result
+
+
+@router.post("/upgrade-requests/{request_id}/approve")
+async def approve_upgrade(request_id: str, days: int = 30, key: str = "", db: Session = Depends(get_db)):
+    """Approve an upgrade request and activate the plan."""
+    check_key(key)
+    req = db.query(PlanRequest).filter(PlanRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    seller = db.query(Seller).filter(Seller.id == req.seller_id).first()
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found")
+
+    seller.plan = req.requested_plan
+    seller.plan_expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+    seller.is_active = True
+    req.status = "approved"
+    db.commit()
+    return {"message": f"{seller.fb_page_name} upgraded to {req.requested_plan} for {days} days"}
+
+
+@router.post("/upgrade-requests/{request_id}/reject")
+async def reject_upgrade(request_id: str, note: str = "", key: str = "", db: Session = Depends(get_db)):
+    """Reject an upgrade request."""
+    check_key(key)
+    req = db.query(PlanRequest).filter(PlanRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    req.status = "rejected"
+    req.admin_note = note
+    db.commit()
+    return {"message": "Request rejected"}
