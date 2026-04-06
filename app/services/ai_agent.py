@@ -85,33 +85,44 @@ def build_system_prompt(seller: Seller, products: List[Product], media_list: Lis
 - DON'T sound robotic, stiff, or overly formal. No "আমাদের প্রতিষ্ঠানে আপনাকে স্বাগতম" type cringe.
 - Show enthusiasm when someone wants to buy something.
 
-## LANGUAGE STYLE:
-- Bangla sentences with English terms mixed in naturally — the way people actually talk in BD.
-- Keep English words in English: brand names, product names, order, delivery, confirm, cancel, size, color, stock, available, bKash, Nagad, COD, etc.
-- Write Bangla parts in proper Bangla script (NOT Banglish/Roman letters).
-- Good examples:
-  - "জি ভাই, এটা available আছে! কোন size লাগবে?"
-  - "দাম ৮৫০ টাকা, delivery charge ঢাকায় ৬০। Order দিবেন?"
-  - "নাম আর phone number টা দেন, order process করে দিচ্ছি।"
-  - "ওহ এটা just sold out হয়ে গেছে! অন্য কিছু দেখবেন?"
-- BAD examples (never do these):
-  - "apni ki order korte chan?" (Banglish — ugly)
-  - "আমাদের shop এ আপনাকে স্বাগত জানাচ্ছি।" (too formal/robotic)
-  - Full English paragraphs (customers prefer Bangla mix)
+## LANGUAGE STYLE (VERY IMPORTANT):
+Write in Banglish (Bengali words in English/Roman letters). This is how young Bangladeshis actually chat online.
+
+Examples of CORRECT Banglish replies:
+- "Ji vai, eta available ache! Kon size lagbe?"
+- "Dam 850 taka, delivery charge Dhaka-y 60. Order diben?"
+- "Nam ar phone number ta den, order process kore dicchi."
+- "Oh eta just sold out hoye geche! Onno kichu dekhben?"
+- "Apnar order confirm hoye geche! Amra soon deliver korbo."
+- "Sorry apu, eta stock e nei. But ei product ta dekhte paren!"
+- "Delivery charge Dhaka-y 60 taka, Dhaka-r baire 120 taka."
+
+RULES for language:
+1. Write in Banglish (Roman letters) — NOT in Bangla script, NOT in full English
+2. Keep it natural and casual, like texting a friend
+3. Use common words: vai, apu, ji, taka, dam, order, delivery, confirm, cancel, stock, available
+4. If customer writes in Bangla script, still reply in Banglish
+5. Product names, brand names stay in English
+6. Numbers can be in English: 850, 60, 120
+
+BAD examples (NEVER do these):
+- Writing in Bangla script like "জি ভাই" (the model makes mistakes in Bangla script)
+- Full formal English paragraphs
+- Mixing Bangla script and Roman letters in the same word
 
 ## RULES:
 1. Keep replies SHORT — 1-3 lines max. Customers are on mobile. Nobody reads paragraphs.
 2. Never make up info. Only use the product list and shop info below.
-3. যা জানো না, সোজা বলো: "এটা আমি sure না, owner কে জিজ্ঞেস করে জানাচ্ছি!"
+3. If you don't know: "Eta ami sure na, owner ke jiggesh kore janacchi!"
 4. For orders, collect info naturally (don't sound like a form):
-   - First: কোন product চান
-   - Then: নাম আর phone number
+   - First: kon product chan
+   - Then: nam ar phone number
    - Then: delivery address
-   - Last: payment method
-5. If someone asks if you're a bot, be honest: "জি, আমি এই shop এর AI assistant। তবে help করতে পারব!"
+   - Last: payment method (bKash/Nagad/COD)
+5. If someone asks if you're a bot: "Ji, ami ei shop er AI assistant. But help korte parbo!"
 6. Max 1-2 emojis per message. Don't overdo it.
-7. Check product stock before confirming. If out of stock, let them know and suggest alternatives.
-8. Only share what's relevant to their question. Don't dump everything at once.
+7. Check product stock before confirming. If out of stock, suggest alternatives.
+8. Only share what's relevant to their question. Don't dump everything.
 
 ## SHOP INFO:
 - Shop: {seller.fb_page_name}
@@ -220,69 +231,40 @@ def get_ai_response(db: Session, seller: Seller, customer: Customer, message: st
     # Add system message at the beginning
     messages = [{"role": "system", "content": system_prompt}] + cleaned
 
-    # Try Claude API first (best Bangla support), then Kilo as fallback
+    # Call Kilo Gateway (OpenAI-compatible) — try models with fallback
+    import time
     raw_text = None
-
-    # === CLAUDE API (Primary) ===
-    if settings.anthropic_api_key:
-        try:
-            with httpx.Client(timeout=30) as http_client:
-                # Claude uses a different format: system is separate, no "system" role in messages
-                claude_messages = [m for m in messages if m["role"] != "system"]
+    with httpx.Client(timeout=30) as http_client:
+        for attempt, model in enumerate(KILO_MODELS):
+            try:
                 response = http_client.post(
-                    CLAUDE_API_URL,
+                    f"{KILO_BASE_URL}/chat/completions",
                     headers={
-                        "x-api-key": settings.anthropic_api_key,
-                        "anthropic-version": "2023-06-01",
-                        "content-type": "application/json",
+                        "Authorization": f"Bearer {settings.kilo_api_key}",
+                        "Content-Type": "application/json",
                     },
                     json={
-                        "model": CLAUDE_MODEL,
+                        "model": model,
+                        "messages": messages,
                         "max_tokens": 500,
-                        "system": system_prompt,
-                        "messages": claude_messages,
+                        "temperature": 0.7,
                     },
                 )
                 response.raise_for_status()
                 resp_data = response.json()
-                content = resp_data.get("content", [])
-                if content and content[0].get("text"):
-                    raw_text = content[0]["text"].strip()
-                    print(f"Claude response OK ({len(raw_text)} chars)")
-        except Exception as e:
-            print(f"Claude API error: {e}, falling back to Kilo...")
-
-    # === KILO GATEWAY (Fallback) ===
-    if raw_text is None and settings.kilo_api_key:
-        import time
-        with httpx.Client(timeout=30) as http_client:
-            for attempt, model in enumerate(KILO_MODELS):
-                try:
-                    response = http_client.post(
-                        f"{KILO_BASE_URL}/chat/completions",
-                        headers={
-                            "Authorization": f"Bearer {settings.kilo_api_key}",
-                            "Content-Type": "application/json",
-                        },
-                        json={
-                            "model": model,
-                            "messages": messages,
-                            "max_tokens": 500,
-                            "temperature": 0.7,
-                        },
-                    )
-                    response.raise_for_status()
-                    resp_data = response.json()
-                    content = resp_data.get("choices", [{}])[0].get("message", {}).get("content")
-                    if content:
-                        raw_text = content.strip()
-                        print(f"Kilo ({model}) response OK")
-                        break
-                except Exception as e:
-                    print(f"Kilo {model} error: {e}")
-                    if attempt == 0:
-                        time.sleep(1)
-                    continue
+                content = resp_data.get("choices", [{}])[0].get("message", {}).get("content")
+                if content:
+                    raw_text = content.strip()
+                    print(f"Kilo ({model}) response OK")
+                    break
+            except httpx.HTTPStatusError as e:
+                print(f"Model {model} failed ({e.response.status_code}), trying next...")
+                if attempt == 0:
+                    time.sleep(1)
+                continue
+            except Exception as e:
+                print(f"Model {model} error: {e}, trying next...")
+                continue
 
     if raw_text is None:
         raise Exception("All AI models are unavailable")
