@@ -46,69 +46,85 @@ async def verify_webhook(
 
 @router.post("/webhook")
 async def receive_message(request: Request, db: Session = Depends(get_db)):
-    body = await request.body()
-    signature = request.headers.get("X-Hub-Signature-256", "")
-    if signature and not verify_webhook_signature(body, signature):
-        print(f"Signature mismatch - got: {signature[:30]}...")
+    import traceback
+    try:
+        body = await request.body()
+        signature = request.headers.get("X-Hub-Signature-256", "")
+        if signature and not verify_webhook_signature(body, signature):
+            print(f"Signature mismatch - got: {signature[:30]}...")
 
-    data = await request.json()
+        data = await request.json()
 
-    if data.get("object") != "page":
-        return {"status": "ignored"}
+        if data.get("object") != "page":
+            return {"status": "ignored"}
 
-    for entry in data.get("entry", []):
-        page_id = entry.get("id")
+        for entry in data.get("entry", []):
+            page_id = entry.get("id")
 
-        for event in entry.get("messaging", []):
-            message = event.get("message")
-            if not message:
-                continue
-            if message.get("is_echo"):
-                continue
-
-            # Deduplication
-            mid = message.get("mid")
-            if mid:
-                existing = db.query(ProcessedMessage).filter(ProcessedMessage.mid == mid).first()
-                if existing:
+            for event in entry.get("messaging", []):
+                message = event.get("message")
+                if not message:
                     continue
-                db.add(ProcessedMessage(mid=mid))
-                db.commit()
+                if message.get("is_echo"):
+                    continue
 
-            sender_id = event["sender"]["id"]
+                # Deduplication
+                mid = message.get("mid")
+                if mid:
+                    existing = db.query(ProcessedMessage).filter(ProcessedMessage.mid == mid).first()
+                    if existing:
+                        continue
+                    db.add(ProcessedMessage(mid=mid))
+                    try:
+                        db.commit()
+                    except Exception:
+                        db.rollback()
 
-            # Handle voice messages, images, videos, stickers
-            if not message.get("text"):
-                await handle_non_text_message(db, page_id, sender_id, message)
-                continue
+                sender_id = event["sender"]["id"]
 
-            message_text = message["text"]
-            await handle_customer_message(db, page_id, sender_id, message_text)
+                # Handle voice messages, images, videos, stickers
+                if not message.get("text"):
+                    try:
+                        await handle_non_text_message(db, page_id, sender_id, message)
+                    except Exception as e:
+                        print(f"Non-text handler error: {e}")
+                    continue
 
-        # Handle comments on posts (feed webhook)
-        for change in entry.get("changes", []):
-            if change.get("field") != "feed":
-                continue
-            value = change.get("value", {})
-            if value.get("item") != "comment" or value.get("verb") != "add":
-                continue
-            # Skip page's own comments and replies created by the app
-            commenter_id = value.get("from", {}).get("id", "")
-            if commenter_id == page_id:
-                continue
-            # Skip replies to comments (only respond to top-level)
-            if value.get("parent_id"):
-                continue
+                message_text = message["text"]
+                try:
+                    await handle_customer_message(db, page_id, sender_id, message_text)
+                except Exception as e:
+                    print(f"MESSAGE HANDLER ERROR: {traceback.format_exc()}")
+
+            # Handle comments on posts (feed webhook)
+            for change in entry.get("changes", []):
+                if change.get("field") != "feed":
+                    continue
+                value = change.get("value", {})
+                if value.get("item") != "comment" or value.get("verb") != "add":
+                    continue
+                commenter_id = value.get("from", {}).get("id", "")
+                if commenter_id == page_id:
+                    continue
+                if value.get("parent_id"):
+                    continue
                 comment_id = value.get("comment_id")
                 if comment_id:
-                    # Dedup comments too
                     existing = db.query(ProcessedMessage).filter(ProcessedMessage.mid == f"comment_{comment_id}").first()
                     if existing:
                         continue
                     db.add(ProcessedMessage(mid=f"comment_{comment_id}"))
-                    db.commit()
+                    try:
+                        db.commit()
+                    except Exception:
+                        db.rollback()
+                    try:
+                        await handle_comment(db, page_id, value)
+                    except Exception as e:
+                        print(f"Comment handler error: {e}")
 
-                    await handle_comment(db, page_id, value)
+    except Exception as e:
+        print(f"WEBHOOK FATAL ERROR: {traceback.format_exc()}")
 
     return {"status": "ok"}
 
